@@ -44,17 +44,21 @@ writeCircBuf (circBuf_t *buffer, int32_t entry)
 
 // *******************************************************
 // readCircBuf: return entry at the current rindex location,
-// advance rindex, modulo (buffer size). The function deos not check
+// advance rindex, modulo (buffer size). The function checks
 // if reading has advanced ahead of writing.
 int32_t
 readCircBuf (circBuf_t *buffer)
 {
 	int32_t entry;
-	
-	entry = buffer->data[buffer->rindex];
-	buffer->rindex++;
-	if (buffer->rindex >= buffer->size)
-	   buffer->rindex = 0;
+	if (buffer->data[buffer->rindex] == -100000) {
+		entry = 0;
+	} else {
+		entry = buffer->data[buffer->rindex];
+		buffer->data[buffer->rindex] = -100000;
+		buffer->rindex++;
+		if (buffer->rindex >= buffer->size)
+		buffer->rindex = 0;
+	}
     return entry;
 }
 
