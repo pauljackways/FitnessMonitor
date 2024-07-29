@@ -97,15 +97,21 @@ void test_buffer_is_clean_after_full_buffer_cycle_completed(void)
 
 void test_buffer_is_circular(void)
 {
-    TEST_IGNORE(); // Remove this when the test is written
-
-    // Arange: given buffer is fully written to and then fully read from
+    // Arrange: given buffer is fully written to and then fully read from
+    writeConsecutiveSequenceToBuffer(0, STANDARD_TEST_CAPACITY);
+    for (int i=0; i < STANDARD_TEST_CAPACITY; i++) {
+        readCircBuf(&buff);
+    }
 
     // Arrange: given a new value is written
+    writeCircBuf(&buff, STANDARD_TEST_CAPACITY+1);
 
     // Act: when buffer is read
+    int32_t value = readCircBuf(&buff);
 
     // Assert: the last written element is returned
+    TEST_ASSERT_EQUAL(STANDARD_TEST_CAPACITY+1, value);
+
 }
 
 void test_no_values_overwritten_after_full(void)
