@@ -12,6 +12,11 @@
 #include <stdint.h>
 #include "stdlib.h"
 #include "circBufT.h"
+#include <stdbool.h>
+
+// *******************************************************
+// global variable for determining full or empty state
+int32_t spaceLeft;
 
 // *******************************************************
 // initCircBuf: Initialise the circBuf instance. Reset both indices to
@@ -26,9 +31,11 @@ initCircBuf (circBuf_t *buffer, uint32_t size)
 	buffer->size = size;
 	buffer->data = 
         (int32_t *) calloc (size, sizeof(int32_t));
+	spaceLeft = buffer->size;
 	return buffer->data;
 }
-   // Note use of calloc() to clear contents.
+
+// Note use of calloc() to clear contents.
 
 // *******************************************************
 // writeCircBuf: insert entry at the current windex location,
@@ -36,10 +43,11 @@ initCircBuf (circBuf_t *buffer, uint32_t size)
 void
 writeCircBuf (circBuf_t *buffer, int32_t entry)
 {
-	if ((buffer->data[buffer->windex] != 0) && (buffer->data[buffer->windex] != -100000)) {
+	if (spaceLeft <= 0) {
 		return;
 	}
 	buffer->data[buffer->windex] = entry;
+	spaceLeft--;
 	buffer->windex++;
 	if (buffer->windex >= buffer->size)
 	   buffer->windex = 0;
@@ -49,15 +57,17 @@ writeCircBuf (circBuf_t *buffer, int32_t entry)
 // readCircBuf: return entry at the current rindex location,
 // advance rindex, modulo (buffer size). The function checks
 // if reading has advanced ahead of writing.
+
+
 int32_t
 readCircBuf (circBuf_t *buffer)
 {
 	int32_t entry;
-	if (buffer->data[buffer->rindex] == -100000) {
+	if (spaceLeft == buffer->size) {
 		entry = 0;
 	} else {
 		entry = buffer->data[buffer->rindex];
-		buffer->data[buffer->rindex] = -100000;
+		spaceLeft++;
 		buffer->rindex++;
 		if (buffer->rindex >= buffer->size)
 		buffer->rindex = 0;
