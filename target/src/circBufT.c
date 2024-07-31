@@ -14,9 +14,6 @@
 #include "circBufT.h"
 #include <stdbool.h>
 
-// *******************************************************
-// global variable for determining full or empty state
-int32_t spaceLeft;
 
 // *******************************************************
 // initCircBuf: Initialise the circBuf instance. Reset both indices to
@@ -34,7 +31,7 @@ initCircBuf (circBuf_t *buffer, uint32_t size)
 	buffer->size = (int32_t)size;
 	buffer->data = 
         (int32_t *) calloc (size, sizeof(int32_t));
-	spaceLeft = buffer->size;
+	buffer->spaceLeft = buffer->size;
 	return buffer->data;
 }
 
@@ -46,11 +43,11 @@ initCircBuf (circBuf_t *buffer, uint32_t size)
 void
 writeCircBuf (circBuf_t *buffer, int32_t entry)
 {
-	if (spaceLeft <= 0) {
+	if (buffer->spaceLeft <= 0) {
 		return;
 	}
 	buffer->data[buffer->windex] = entry;
-	spaceLeft--;
+	buffer->spaceLeft--;
 	buffer->windex++;
 	if (buffer->windex >= buffer->size)
 	   buffer->windex = 0;
@@ -66,11 +63,11 @@ int32_t
 readCircBuf (circBuf_t *buffer)
 {
 	int32_t entry;
-	if (spaceLeft == buffer->size) {
+	if (buffer->spaceLeft == buffer->size) {
 		entry = 0;
 	} else {
 		entry = buffer->data[buffer->rindex];
-		spaceLeft++;
+		buffer->spaceLeft++;
 		buffer->rindex++;
 		if (buffer->rindex >= buffer->size)
 		buffer->rindex = 0;
