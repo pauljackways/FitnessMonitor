@@ -26,6 +26,9 @@ int32_t spaceLeft;
 int32_t *
 initCircBuf (circBuf_t *buffer, uint32_t size)
 {
+	if (size > MAX_CIRCBUFT_SIZE || size <= 0) {
+		return NULL;
+	}
 	buffer->windex = 0;
 	buffer->rindex = 0;
 	buffer->size = size;

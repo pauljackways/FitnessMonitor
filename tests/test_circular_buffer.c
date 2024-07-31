@@ -163,18 +163,20 @@ void test_min_capacity_when_single_element_written_to_buffer_then_same_value_is_
 
 void test_capacity_0_invalid(void)
 {
-    TEST_IGNORE(); // Remove this when the test is written
-
     // Arrange/Act
+    
 
     // Assert: the return value of initCircBuf is NULL
+    TEST_ASSERT_EQUAL(reconstructBufferWithSize(0), NULL);
+
 }
 
 void test_capacity_higher_than_max_invalid(void)
 {
-    TEST_IGNORE(); // Remove this when the test is written
-
     // Arrange/Act
+    
 
     // Assert: the return value of initCircBuf is NULL
+    TEST_ASSERT_EQUAL(reconstructBufferWithSize(MAX_CIRCBUFT_SIZE + 1), NULL);
+
 }
