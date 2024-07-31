@@ -180,3 +180,13 @@ void test_capacity_higher_than_max_invalid(void)
     TEST_ASSERT_EQUAL(reconstructBufferWithSize(MAX_CIRCBUFT_SIZE + 1), NULL);
 
 }
+
+void test_capacity_max_valid(void)
+{
+    // Arrange/Act
+    reconstructBufferWithSize(MAX_CIRCBUFT_SIZE);
+
+    // Assert: the return value of initCircBuf is NULL
+    TEST_ASSERT_EQUAL(&buff, NULL);
+
+}
