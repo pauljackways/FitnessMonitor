@@ -31,7 +31,7 @@ initCircBuf (circBuf_t *buffer, uint32_t size)
 	}
 	buffer->windex = 0;
 	buffer->rindex = 0;
-	buffer->size = size;
+	buffer->size = (int32_t)size;
 	buffer->data = 
         (int32_t *) calloc (size, sizeof(int32_t));
 	spaceLeft = buffer->size;

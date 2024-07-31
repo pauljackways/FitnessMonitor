@@ -19,7 +19,7 @@ typedef struct {
 	uint32_t size;		// Number of entries in buffer
 	uint32_t windex;	// index for writing, mod(size)
 	uint32_t rindex;	// index for reading, mod(size)
-	uint32_t *data;		// pointer to the data
+	int32_t *data;		// pointer to the data
 } circBuf_t;
 
 // *******************************************************
