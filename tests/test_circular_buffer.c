@@ -186,7 +186,7 @@ void test_capacity_max_valid(void)
     // Arrange/Act
     reconstructBufferWithSize(MAX_CIRCBUFT_SIZE);
 
-    // Assert: the return value of initCircBuf is NULL
-    TEST_ASSERT_EQUAL(&buff, NULL);
+    // Assert: the size of the circular buffer is the max size allowable
+    TEST_ASSERT_EQUAL(buff.size, MAX_CIRCBUFT_SIZE);
 
 }
