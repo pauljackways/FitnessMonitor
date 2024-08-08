@@ -202,7 +202,6 @@ void test_adc_int_reads_correct_channel_and_sequence(void)
 void test_adc_int_writes_to_buffer(void)
 {
     //Arrange
-    initADC();
     circBuf_t* buffer = get_circBuf_ptr_and_reset_fff();
     initCircBuf_fake.arg0_val = buffer;
 
@@ -219,7 +218,6 @@ void test_adc_int_writes_to_buffer(void)
 void test_adc_int_writes_correct_value(void)
 {
     //Arrange
-    initADC();
     circBuf_t* buffer = get_circBuf_ptr_and_reset_fff();
     initCircBuf_fake.arg0_val = buffer;
     ADCSequenceDataGet_fake.custom_fake = ADCSequenceDataGet_fake_adc_value;
@@ -241,8 +239,52 @@ void test_adc_int_clears_interrupt(void)
     ADCIntHandler();
 
     //Assert
+    TEST_ASSERT_EQUAL(ADC0_BASE, ADCIntClear_fake.arg0_val);
+    TEST_ASSERT_EQUAL(3, ADCIntClear_fake.arg1_val);
+    TEST_ASSERT_EQUAL(1, ADCIntClear_fake.call_count);
 
-    
 }
 
 /* Test cases - readADC */
+void test_read_adc_reads_correct_buffer() {
+    //Arrange
+    circBuf_t* buffer = get_circBuf_ptr_and_reset_fff();
+    
+    //Act
+    readADC();
+
+    //Assert
+    TEST_ASSERT_EQUAL(buffer, readCircBuf_fake.arg0_val);
+
+}
+
+void test_read_adc_iterates_correctly() {
+    //Arrange
+    circBuf_t* buffer = get_circBuf_ptr_and_reset_fff();
+    
+    //Act
+    readADC();
+
+    //Assert
+    TEST_ASSERT_EQUAL(ADC_BUF_SIZE, readCircBuf_fake.call_count);
+
+
+}
+
+void test_read_adc_averages_correctly() {
+    //Arrange
+    circBuf_t* buffer = get_circBuf_ptr_and_reset_fff();
+    uint32_t return_values[ADC_BUF_SIZE];
+    uint32_t sum = 0;
+    for (uint32_t i=0; i<ADC_BUF_SIZE; i++) {
+        return_values[i] = i;
+        sum+= i;
+    }
+    SET_RETURN_SEQ(readCircBuf, return_values, ADC_BUF_SIZE);
+
+    //Act
+    //Assert
+    TEST_ASSERT_EQUAL((sum + ADC_BUF_SIZE / 2)/ADC_BUF_SIZE, readADC());
+    
+}
+
