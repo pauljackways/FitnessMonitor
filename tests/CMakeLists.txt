@@ -14,5 +14,8 @@ add_unity_test(test_fff test_fff.c)
 add_unity_test(test_adc test_adc.c ${SRC_DIR}/ADC_read.c)
 target_include_directories(test_adc PRIVATE ${SRC_DIR} ${MOCK_DIR} ${TIVAWARE_DIR})
 
+add_unity_test(test_adc_hal test_adc_hal.c ${SRC_DIR}/adc_hal_tiva.c)
+target_include_directories(test_adc_hal PRIVATE ${SRC_DIR} ${MOCK_DIR} ${TIVAWARE_DIR})
+
 add_unity_test(test_circular_buffer test_circular_buffer.c ${SRC_DIR}/circBufT.c)
 target_include_directories(test_circular_buffer PRIVATE ${SRC_DIR} ${MOCK_DIR} ${TIVAWARE_DIR})
