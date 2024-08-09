@@ -5,9 +5,9 @@
 #include <stdint.h>
 
 typedef enum {
-    ADC_ID_1 = 1,  // Assign 1 to ADC_ID_1
-    ADC_ID_2,    
-    ADC_ID_3,      
+    TIVA_ADC1 = 1,  // Assign 1 to ADC_ID_1
+    TIVA_ADC2,
+    FAKE_ADC1 = 10 // Fake ADC to simulate ADC from another vendor
     // Add more ADC IDs as needed
 } adc_id_t;
 
@@ -18,6 +18,6 @@ typedef void(*callback)(uint32_t);
 void adc_hal_register(adc_id_t id, callback cb);
 
 // Function to start ADC conversion
-void adc_hal_start_conversion(int id);
+void adc_hal_start_conversion(adc_id_t id);
 
-#endif // ADC_HAL_H
+#endif // ADC_HAL_H;

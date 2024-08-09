@@ -12,13 +12,13 @@ DEFINE_FFF_GLOBALS;
 #define ADC_BUF_SIZE 10
 #define FAKE_ADC_VALUE 0xFACCEADC // No K's in hex
 
-// macro for help with init tests
-#define ASSERT_FAKE_CALLED_ONCE_WITH_ARGS(fake_func, expected_arg0, expected_arg1, expected_arg2, expected_arg3) \
-    TEST_ASSERT_EQUAL(1, fake_func##_fake.call_count); \
-    TEST_ASSERT_EQUAL(expected_arg0, fake_func##_fake.arg0_val); \
-    TEST_ASSERT_EQUAL(expected_arg1, fake_func##_fake.arg1_val); \
-    TEST_ASSERT_EQUAL(expected_arg2, fake_func##_fake.arg2_val); \
-    TEST_ASSERT_EQUAL(expected_arg3, fake_func##_fake.arg3_val);
+// // macro for help with init tests
+// #define ASSERT_FAKE_CALLED_ONCE_WITH_ARGS(fake_func, expected_arg0, expected_arg1, expected_arg2, expected_arg3) \
+//     TEST_ASSERT_EQUAL(1, fake_func##_fake.call_count); \
+//     TEST_ASSERT_EQUAL(expected_arg0, fake_func##_fake.arg0_val); \
+//     TEST_ASSERT_EQUAL(expected_arg1, fake_func##_fake.arg1_val); \
+//     TEST_ASSERT_EQUAL(expected_arg2, fake_func##_fake.arg2_val); \
+//     TEST_ASSERT_EQUAL(expected_arg3, fake_func##_fake.arg3_val);
 
 /* Helper functions */      
 void reset_fff(void)
@@ -169,7 +169,7 @@ void test_adc_init_enables_adc_interrupt(void)
     TEST_ASSERT_EQUAL(3, ADCIntEnable_fake.arg1_val);  
 }
 
-/* Test cases - pollADC */
+/* Test cases - polling ADC */
 void test_adc_poll_triggers_adc(void)
 {
     // Arrange
