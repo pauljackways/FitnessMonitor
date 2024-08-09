@@ -6,21 +6,19 @@
 #include "driverlib/adc.h"
 #include "driverlib/sysctl.h"
 
-// Define macros for generating interrupt handler names
+typedef void (*adc_handler)(void);  // Type for the ADC interrupt handler
 
-typedef void (*adc_handler)(void);  // Define a type for the ADC interrupt handler
-
-typedef struct {
+typedef struct { // Struct object for ADC configuration
     uint32_t base;
     uint32_t sequence;
     callback callback;
-    adc_handler handler;  // Pointer to the interrupt handler
+    adc_handler handler;
 } adc_config_t;
 
-static adc_config_t adc_configs[] = {
+static adc_config_t adc_configs[] = {  // ADC configuration object initialiations 
     [TIVA_ADC1] = {ADC0_BASE, 3, (void*)0, ADC1_IntHandler},
     [TIVA_ADC2] = {ADC1_BASE, 3, (void*)0, ADC2_IntHandler}
-};
+}; // Add more ADC configurations as needed
 
 void ADC1_IntHandler(void) {
     uint32_t value;
@@ -68,14 +66,12 @@ void adc_hal_register(adc_id_t id, callback cb) {
 }
 
 void adc_hal_start_conversion(adc_id_t id) {
-    switch (id) {
-        case TIVA_ADC1:
-            ADCProcessorTrigger(ADC0_BASE, 3);
-            break;
-        case TIVA_ADC2:
-            ADCProcessorTrigger(ADC1_BASE, 3);
-            break;
-        default:
-            break;
+    adc_config_t* config = &adc_configs[id];
+
+    // Check if the configuration is valid
+    if (config->base == 0) {
+        // Invalid ADC ID, handle error
+        return;
     }
+    ADCProcessorTrigger(config->base, config->sequence);
 }
