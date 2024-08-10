@@ -1,24 +1,8 @@
 #include <stdint.h>
 #include <stdbool.h>
-#include "adc_hal.h"
 #include "adc_hal_tiva.h"
-#include "inc/hw_memmap.h"
 #include "driverlib/adc.h"
 #include "driverlib/sysctl.h"
-
-typedef void (*adc_handler)(void);  // Type for the ADC interrupt handler
-
-typedef struct { // Struct object for ADC configuration
-    uint32_t base;
-    uint32_t sequence;
-    callback callback;
-    adc_handler handler;
-} adc_config_t;
-
-static adc_config_t adc_configs[] = {  // ADC configuration object initialiations 
-    [TIVA_ADC1] = {ADC0_BASE, 3, (void*)0, ADC1_IntHandler},
-    [TIVA_ADC2] = {ADC1_BASE, 3, (void*)0, ADC2_IntHandler}
-}; // Add more ADC configurations as needed
 
 void ADC1_IntHandler(void) {
     uint32_t value;
@@ -41,8 +25,12 @@ void ADC2_IntHandler(void) {
 void adc_hal_register(adc_id_t id, callback cb) {
     adc_config_t* config = &adc_configs[id];
 
-    if (config->base == 0) {
+    if (config->base == 0 || id < TIVA_ADC_START || id > TIVA_ADC_END) {
         // Invalid ADC ID, handle error
+        return;
+    }
+    if (cb == (void*)0) {
+        // Invalid callback function, handle error
         return;
     }
 
