@@ -1,5 +1,6 @@
 #include "unity.h"
 #include "ADC_read.h"
+#include "adc_hal.h"
 
 #include "fff.h"
 DEFINE_FFF_GLOBALS;
@@ -142,7 +143,7 @@ void test_adc_init_registers_adc_interrupt(void)
     TEST_ASSERT_EQUAL(1, ADCIntRegister_fake.call_count);
     TEST_ASSERT_EQUAL(ADC0_BASE, ADCIntRegister_fake.arg0_val);
     TEST_ASSERT_EQUAL(3, ADCIntRegister_fake.arg1_val);  
-    TEST_ASSERT_EQUAL(ADCIntHandler, ADCIntRegister_fake.arg2_val);
+    TEST_ASSERT_EQUAL(ADC1_IntHandler, ADCIntRegister_fake.arg2_val);
 }
 
 void test_adc_init_enables_adc_before_other_adc_operations(void)
@@ -191,7 +192,7 @@ void test_adc_int_reads_correct_channel_and_sequence(void)
     initADC();
     
     //Act
-    ADCIntHandler();
+    ADC1_IntHandler();
 
     //Assert
     TEST_ASSERT_EQUAL(ADC0_BASE, ADCSequenceDataGet_fake.arg0_val);
@@ -206,7 +207,7 @@ void test_adc_int_writes_to_buffer(void)
     initCircBuf_fake.arg0_val = buffer;
 
     //Act
-    ADCIntHandler();
+    ADC1_IntHandler();
 
     //Assert
     TEST_ASSERT_EQUAL(1, writeCircBuf_fake.call_count);
@@ -223,7 +224,7 @@ void test_adc_int_writes_correct_value(void)
     ADCSequenceDataGet_fake.custom_fake = ADCSequenceDataGet_fake_adc_value;
 
     //Act
-    ADCIntHandler();
+    ADC1_IntHandler();
 
     //Assert
     TEST_ASSERT_EQUAL(1, writeCircBuf_fake.call_count);
@@ -236,7 +237,7 @@ void test_adc_int_clears_interrupt(void)
     initADC();
     
     //Act
-    ADCIntHandler();
+    ADC1_IntHandler();
 
     //Assert
     TEST_ASSERT_EQUAL(ADC0_BASE, ADCIntClear_fake.arg0_val);

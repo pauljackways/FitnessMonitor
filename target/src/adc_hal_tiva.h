@@ -15,10 +15,6 @@ typedef struct { // Struct object for ADC configuration
     adc_handler handler;
 } adc_config_t;
 
-// Declare interrupt handlers for each ADC
-void ADC1_IntHandler(void);
-void ADC2_IntHandler(void);
-
 static adc_config_t adc_configs[] = {  // ADC configuration object initialiations 
     [TIVA_ADC1] = {ADC0_BASE, 3, (void*)0, ADC1_IntHandler},
     [TIVA_ADC2] = {ADC1_BASE, 3, (void*)0, ADC2_IntHandler}

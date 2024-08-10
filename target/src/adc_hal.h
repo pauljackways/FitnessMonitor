@@ -18,6 +18,10 @@ typedef enum {
 #define FAKE_ADC_START FAKE_ADC1
 #define FAKE_ADC_END (FAKE_ADC + 9)
 
+// Declare interrupt handlers for each ADC
+void ADC1_IntHandler(void);
+void ADC2_IntHandler(void);
+
 // Define the callback type
 typedef void(*callback)(uint32_t);
 
