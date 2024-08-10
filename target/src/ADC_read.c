@@ -14,6 +14,7 @@
 #include "inc/hw_memmap.h"
 #include "driverlib/adc.h"
 #include "driverlib/sysctl.h"
+#include "adc_hal.h"
 #include "circBufT.h"
 
 //*****************************************************************************
@@ -36,7 +37,7 @@ void pollADC(void)
     //
     // Initiate a conversion
     //
-    ADCProcessorTrigger(ADC0_BASE, 3);
+    adc_hal_start_conversion(TIVA_ADC1);
 //    g_ulSampCnt++;
 }
 
