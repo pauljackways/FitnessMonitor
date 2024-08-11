@@ -16,6 +16,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include "FreeRTOS.h"
+#include "task.h"
 #include "inc/hw_memmap.h"
 #include "inc/hw_types.h"
 #include "inc/hw_ints.h"
@@ -70,7 +72,6 @@
  *******************************************/
 void SysTickIntHandler (void);
 void initClock (void);
-void initSysTick (void);
 void initDisplay (void);
 void initAccl (void);
 vector3_t getAcclData (void);
@@ -79,42 +80,22 @@ vector3_t getAcclData (void);
 /*******************************************
  *      Globals
  *******************************************/
-unsigned long ticksElapsed = 0; // Incremented once every system tick. Must be read with SysTickIntHandler(), or you can get garbled data!
+
 
 deviceStateInfo_t deviceState; // Stored as one global so it can be accessed by other helper libs within this main module
 
 /***********************************************************
  * Initialisation functions
  ***********************************************************/
-void SysTickIntHandler (void)
-{
-    ticksElapsed++;
-}
-
 
 
 void initClock (void)
 {
-    // Set the clock rate to 20 MHz
-    SysCtlClockSet (SYSCTL_SYSDIV_10 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN |
+    // Set the clock rate to 80 MHz
+    SysCtlClockSet (SYSCTL_SYSDIV_2_5 | SYSCTL_USE_PLL | SYSCTL_OSC_MAIN |
                    SYSCTL_XTAL_16MHZ);
 }
 
-
-
-void initSysTick (void)
-{
-    // Set up the period for the SysTick timer.  The SysTick timer period is
-    // set as a function of the system clock.
-    SysTickPeriodSet (SysCtlClockGet () / RATE_SYSTICK_HZ);
-    //
-    // Register the interrupt handler
-    SysTickIntRegister (SysTickIntHandler);
-    //
-    // Enable interrupt and device
-    SysTickIntEnable ();
-    SysTickEnable ();
-}
 
 
 
@@ -124,14 +105,15 @@ void initSysTick (void)
 // Read the current systick value, without mangling the data
 unsigned long readCurrentTick(void)
 {
-    unsigned long currentTick;
-    SysTickIntDisable();
-    currentTick = ticksElapsed;
-    SysTickIntEnable();
-    return currentTick;
+    return xTaskGetTickCount();
 }
 
-
+void vAssertCalled( const char * pcFile, unsigned long ulLine ) 
+{
+    (void)pcFile; // unused
+    (void)ulLine; // unused
+    while (true);
+}
 
 // Flash a message onto the screen, overriding everything else
 void flashMessage(char* toShow)
@@ -153,8 +135,10 @@ void flashMessage(char* toShow)
  * Main Loop
  ***********************************************************/
 
-int main(void)
-{
+void superloop(void* args) {
+// Variable declarations
+while(1) {
+
     unsigned long lastIoProcess= 0;
     unsigned long lastAcclProcess = 0;
     unsigned long lastDisplayProcess = 0;
@@ -181,7 +165,6 @@ int main(void)
     initClock();
     displayInit();
     btnInit();
-    initSysTick();
     acclInit();
     initADC();
 
@@ -284,6 +267,15 @@ int main(void)
         #endif // SERIAL_PLOTTING_ENABLED
     }
 
+}
+}
+
+int main(void) {
+// Fitness Monitor 1.0 initialisation
+// ...
+xTaskCreate(&superloop, "superloop", 512, NULL, 1, NULL);
+vTaskStartScheduler();
+return 0; // Should never reach here
 }
 
 
