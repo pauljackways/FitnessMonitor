@@ -1,3 +1,7 @@
+set(SRC_DIR ../target/src)
+set(TIVAWARE_DIR ../target/libs/tivaware)
+set(MOCK_DIR mocks)
+
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 project(FitnessTrackerTests LANGUAGES C)
 
@@ -6,3 +10,8 @@ add_subdirectory(unity)
 
 add_unity_test(test_example test_example.c)
 add_unity_test(test_fff test_fff.c)
+
+add_unity_test(test_adc_hal test_adc_hal.c ${SRC_DIR}/adc_hal_tiva.c)
+target_include_directories(test_adc_hal PRIVATE ${SRC_DIR} ${MOCK_DIR} ${TIVAWARE_DIR})
+
+

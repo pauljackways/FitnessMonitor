@@ -1,5 +1,6 @@
 #include "unity.h"
 #include "adc_hal.h"
+#include "adc_hal_tiva.h"
 
 #include "fff.h"
 DEFINE_FFF_GLOBALS;
@@ -16,6 +17,11 @@ void reset_fff(void)
     FFF_RESET_HISTORY();
 }
 
+void dummy_callback(uint32_t value) {
+
+}
+
+
 /* Unity setup and teardown */
 void setUp(void)
 {
@@ -25,4 +31,9 @@ void setUp(void)
 void tearDown(void)
 {
     
+}
+
+void test_adc_hal_registers_an_adc(void)
+{
+adc_hal_register(ADC_ID_1, dummy_callback);
 }
