@@ -126,11 +126,12 @@ void flashMessage(deviceStateInfo_t* deviceState, char* toShow)
 
 void vTaskUpdateButtons(void *pvParameters)
 {
-    const TickType_t xDelay = pdMS_TO_TICKS(75); // 13.33Hz
+    const TickType_t xDelay = pdTICKS_TO_MS(75); 
+    deviceStateInfo_t* deviceState = (deviceStateInfo_t *)pvParameters;
 
     for (;;)
     {
-        btnUpdateState(pvParameters);
+        btnUpdateState(deviceState);
         vTaskDelay(xDelay); // Delay to achieve 1000 Hz frequency
     }
 }
@@ -148,18 +149,18 @@ void vTaskPollADC(void *pvParameters)
 
 void vTaskGetNewGoal(void *pvParameters)
 {
+    deviceStateInfo_t* deviceState = (deviceStateInfo_t *)pvParameters;
     const TickType_t xDelay = pdTICKS_TO_MS(75); // 75 ticks delay for 13.33 Hz
 
     for (;;)
     {
-        get_new_goal(pvParameters);
+        get_new_goal(deviceState);
         vTaskDelay(xDelay); // Delay to achieve ~13.33 Hz frequency
     }
 }
 
-void get_new_goal(void *parameters) 
+void get_new_goal(deviceStateInfo_t* deviceState) 
 {
-    deviceStateInfo_t* deviceState = (deviceStateInfo_t *)parameters;
     deviceState->newGoal = ((readADC() * POT_SCALE_COEFF) / STEP_GOAL_ROUNDING) * STEP_GOAL_ROUNDING; // Round to the nearest 100 steps
     if (deviceState->newGoal == 0) { // Prevent a goal of zero, instead setting to the minimum goal (this also makes it easier to test the goal-reaching code on a small but non-zero target)
         deviceState->newGoal = STEP_GOAL_ROUNDING;
@@ -284,13 +285,13 @@ int main(void)
     SerialInit ();
     #endif // SERIAL_PLOTTING_ENABLED
 
-    xTaskCreate(vTaskDisplayUpdate, "display_update", 1024, deviceState, 1, NULL);
-    xTaskCreate(vTaskUpdateButtons, "UpdateButtons", 1024, NULL, 1, NULL);
+    xTaskCreate(vTaskDisplayUpdate, "display_update", 1024, deviceState, 2, NULL);
+    xTaskCreate(vTaskUpdateButtons, "UpdateButtons", 1024, deviceState, 1, NULL);
     xTaskCreate(vTaskPollADC, "PollADC", 1024, NULL, 1, NULL);
     xTaskCreate(vTaskGetNewGoal, "get_new_goal", 1024, NULL, 1, NULL);
     xTaskCreate(vTaskAcclProcess, "AcclProcess", 1024, NULL, 1, NULL);
-    xTaskCreate(vTaskGetAcclMean, "get_accl_mean", 1024, &deviceState, 1, NULL);
-    xTaskCreate(vTaskStepTest, "step_test", 1024, &deviceState, 1, NULL);
+    xTaskCreate(vTaskGetAcclMean, "get_accl_mean", 1024, deviceState, 1, NULL);
+    xTaskCreate(vTaskStepTest, "step_test", 1024, deviceState, 1, NULL);
     vTaskStartScheduler();
 
     return 0; // Should never reach here

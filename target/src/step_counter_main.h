@@ -52,6 +52,6 @@ typedef struct {
 
 
 void flashMessage(deviceStateInfo_t*, char*);
-void get_new_goal(void *);
+void get_new_goal(deviceStateInfo_t*);
 
 #endif /* STEP_COUNTER_MAIN_H_ */

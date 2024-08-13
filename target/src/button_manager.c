@@ -47,10 +47,11 @@ void btnInit(void)
 //********************************************************
 void btnUpdateState(deviceStateInfo_t* deviceStateInfo)
 {
+    displayMode_t currentDisplayMode = deviceStateInfo ->displayMode;
+    
     updateButtons();
     updateSwitch();
 
-    displayMode_t currentDisplayMode = deviceStateInfo ->displayMode;
 
     // Changing screens
     if (checkButton(LEFT) == PUSHED) {
