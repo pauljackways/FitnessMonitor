@@ -228,7 +228,7 @@ void vTaskDisplayUpdate(void *pvParameters)
         }
 
         uint16_t secondsElapsed = (readCurrentTick() - deviceState->workoutStartTick)/RATE_SYSTICK_HZ;
-        displayUpdate(deviceState, secondsElapsed);
+        displayUpdate(*deviceState, secondsElapsed);
         vTaskDelay(xDelay); 
     }
 }
@@ -236,6 +236,49 @@ void vTaskDisplayUpdate(void *pvParameters)
 /***********************************************************
  * Main Loop
  ***********************************************************/
+
+void superloop(void* args) {
+
+    #ifdef SERIAL_PLOTTING_ENABLED
+    //unsigned long lastSerialProcess = 0;
+    #endif // SERIAL_PLOTTING_ENABLED
+
+    deviceStateInfo_t deviceState; // Stored as one global so it can be accessed by other helper libs within this main module
+
+    // Device state
+    // Omnibus struct that holds loads of info about the device's current state, so it can be updated from any function
+    deviceState.displayMode = DISPLAY_STEPS;
+    deviceState.stepsTaken = 0;
+    deviceState.currentGoal = TARGET_DISTANCE_DEFAULT;
+    deviceState.debugMode = false;
+    deviceState.displayUnits= UNITS_SI;
+    deviceState.workoutStartTick = 0;
+    deviceState.flashTicksLeft = 0;
+    deviceState.flashMessage = calloc(MAX_STR_LEN + 1, sizeof(char));
+
+
+    while(1) {
+        // Poll the buttons and potentiometer
+//            updateSwitch();
+        xTaskCreate(vTaskDisplayUpdate, "display_update", 256, &deviceState, 1, NULL);
+        xTaskCreate(vTaskUpdateButtons, "UpdateButtons", 256, NULL, 2, NULL);
+        xTaskCreate(vTaskPollADC, "PollADC", 256, NULL, 2, NULL);
+        xTaskCreate(vTaskGetNewGoal, "get_new_goal", 256, NULL, 2, NULL);
+        xTaskCreate(vTaskAcclProcess, "AcclProcess", 256, NULL, 2, NULL);
+        xTaskCreate(vTaskGetAcclMean, "get_accl_mean", 256, &deviceState, 2, NULL);
+        xTaskCreate(vTaskStepTest, "step_test", 256, &deviceState, 2, NULL);
+
+        // Send to USB via serial
+        #ifdef SERIAL_PLOTTING_ENABLED
+        // if (lastSerialProcess + RATE_SYSTICK_HZ/RATE_SERIAL_PLOT_HZ < currentTick) {
+        //     lastSerialProcess = currentTick;
+
+        //     SerialPlot(deviceState.stepsTaken, mean.x, mean.y, mean.z);
+        // }
+        #endif // SERIAL_PLOTTING_ENABLED
+    }
+}
+
 
 int main(void)
 {
@@ -247,52 +290,12 @@ int main(void)
     acclInit();
     initADC();
 
-
-    #ifdef SERIAL_PLOTTING_ENABLED
-    //unsigned long lastSerialProcess = 0;
-    #endif // SERIAL_PLOTTING_ENABLED
-
-    deviceStateInfo_t* deviceState = malloc(sizeof(deviceStateInfo_t)); // Stored as one global so it can be accessed by other helper libs within this main module
-
-    // Device state
-    // Omnibus struct that holds loads of info about the device's current state, so it can be updated from any function
-    deviceState->displayMode = DISPLAY_STEPS;
-    deviceState->stepsTaken = 0;
-    deviceState->stepHigh = false;
-    deviceState->currentGoal = TARGET_DISTANCE_DEFAULT;
-    deviceState->debugMode = false;
-    deviceState->mean = (vector3_t){0,0,0};
-    deviceState->displayUnits= UNITS_SI;
-    deviceState->workoutStartTick = 0;
-    deviceState->flashTicksLeft = 0;
-    deviceState->flashMessage = "Test";
-    // deviceState.flashMessage = calloc(MAX_STR_LEN + 1, sizeof(char));
-
-    // if (deviceState.flashMessage == NULL) {
-    //     return;
-    // }
-
-    #ifdef SERIAL_PLOTTING_ENABLED
-    // if (lastSerialProcess + RATE_SYSTICK_HZ/RATE_SERIAL_PLOT_HZ < currentTick) {
-    //     lastSerialProcess = currentTick;
-
-    //     SerialPlot(deviceState.stepsTaken, mean.x, mean.y, mean.z);
-    // }
-    #endif // SERIAL_PLOTTING_ENABLED
-
     #ifdef SERIAL_PLOTTING_ENABLED
     SerialInit ();
     #endif // SERIAL_PLOTTING_ENABLED
 
-    xTaskCreate(vTaskDisplayUpdate, "display_update", 1024, deviceState, 1, NULL);
-    xTaskCreate(vTaskUpdateButtons, "UpdateButtons", 1024, NULL, 1, NULL);
-    xTaskCreate(vTaskPollADC, "PollADC", 1024, NULL, 1, NULL);
-    xTaskCreate(vTaskGetNewGoal, "get_new_goal", 1024, NULL, 1, NULL);
-    xTaskCreate(vTaskAcclProcess, "AcclProcess", 1024, NULL, 1, NULL);
-    xTaskCreate(vTaskGetAcclMean, "get_accl_mean", 1024, &deviceState, 1, NULL);
-    xTaskCreate(vTaskStepTest, "step_test", 1024, &deviceState, 1, NULL);
+    xTaskCreate(&superloop, "superloop", 512, NULL, 1, NULL);
     vTaskStartScheduler();
-
     return 0; // Should never reach here
 
 
