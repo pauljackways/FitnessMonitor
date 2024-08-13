@@ -1,5 +1,5 @@
 #include "unity.h"
-#include "adc_hal_tiva.h"
+#include "adc_hal.h"
 
 #include "fff.h"
 DEFINE_FFF_GLOBALS;
@@ -9,7 +9,7 @@ DEFINE_FFF_GLOBALS;
 #include "tiva_mocks/adc_mock.h"
 #include "tiva_mocks/sysctl_mock.h"
 
-
+#define INVALID_ADC 0
 /* Custom fakes */
 int32_t ADCSequenceDataGet_fake_adc_value(uint32_t arg0, uint32_t arg1,
                                   uint32_t *arg2)
@@ -70,7 +70,7 @@ void tearDown(void)
 // • When ADC is registered with ID 1, the correct ADC is enabled
 void test_adc_hal_registers_correct_adc(void) {
     //Arrange
-    adc_hal_register(TIVA_ADC1, dummy_callback);
+    adc_hal_register(ADC1, dummy_callback);
 
     //Act
     //Assert
@@ -82,7 +82,7 @@ void test_adc_hal_registers_correct_adc(void) {
 void test_adc_hal_initialises_adc_sequence(void)
 {
     // Act
-    adc_hal_register(TIVA_ADC1, dummy_callback);
+    adc_hal_register(ADC1, dummy_callback);
 
     // Assert
     TEST_ASSERT_EQUAL(1, ADCSequenceConfigure_fake.call_count);
@@ -106,7 +106,7 @@ void test_adc_hal_registration_validation(void) {
 // • When ADC is registered with an invalid ID, ADC is not initialised
 void test_adc_hal_incorrect_id_doesnt_initialise(void) {
     //Arrange
-    adc_hal_register(FAKE_ADC1, dummy_callback);
+    adc_hal_register(INVALID_ADC, dummy_callback);
 
     //Act
 
@@ -121,7 +121,7 @@ void test_adc_hal_incorrect_id_doesnt_initialise(void) {
 // • When ADC is registered with ID 1 and a null function pointer, ADC is not initialised
 void test_adc_hal_null_callback_not_initialised(void) {
     //Arrange
-    adc_hal_register(TIVA_ADC1, (void*)0);
+    adc_hal_register(ADC1, (void*)0);
 
     //Act
 
@@ -136,10 +136,10 @@ void test_adc_hal_null_callback_not_initialised(void) {
 // • When start conversion is called with ID 1, the ADC is triggered
 void test_adc_hal_triggers_conversion(void) {
     //Arrange
-    adc_hal_register(TIVA_ADC1, dummy_callback);
+    adc_hal_register(ADC1, dummy_callback);
 
     //Act
-    adc_hal_start_conversion(TIVA_ADC1);
+    adc_hal_start_conversion(ADC1);
 
     //Assert
     TEST_ASSERT_EQUAL(1, ADCProcessorTrigger_fake.call_count);
@@ -148,10 +148,10 @@ void test_adc_hal_triggers_conversion(void) {
 // • When start conversion is called with invalid ID, no ADC is triggered
 void test_adc_hal_invalid_id_doesnt_trigger_conversion(void) {
     //Arrange
-    adc_hal_register(TIVA_ADC1, dummy_callback);
+    adc_hal_register(INVALID_ADC, dummy_callback);
 
     //Act
-    adc_hal_start_conversion(FAKE_ADC1);
+    adc_hal_start_conversion(INVALID_ADC);
 
     //Assert
     TEST_ASSERT_EQUAL(0, ADCProcessorTrigger_fake.call_count);
@@ -162,7 +162,7 @@ void test_adc_hal_unregistered_id_doesnt_trigger_conversion(void) {
     //Arrange
 
     //Act
-    adc_hal_start_conversion(FAKE_ADC1);
+    adc_hal_start_conversion(INVALID_ADC);
 
     //Assert
     TEST_ASSERT_EQUAL(0, ADCProcessorTrigger_fake.call_count);
@@ -172,10 +172,11 @@ void test_adc_hal_unregistered_id_doesnt_trigger_conversion(void) {
 void test_adc_hal_int_reads_correct_channel_and_sequence(void)
 {
     //Arrange
-    adc_hal_register(TIVA_ADC1, dummy_callback);
+    adc_hal_register(ADC1, dummy_callback);
     
     //Act
-    ADC1_IntHandler();
+    void (*isr)(void) = ADCIntRegister_fake.arg2_val;
+    isr();
 
     //Assert
     TEST_ASSERT_EQUAL(ADC0_BASE, ADCSequenceDataGet_fake.arg0_val);
@@ -186,10 +187,11 @@ void test_adc_hal_int_reads_correct_channel_and_sequence(void)
 void test_adc_int_clears_interrupt(void)
 {
     //Arrange
-    adc_hal_register(TIVA_ADC1, dummy_callback);
+    adc_hal_register(ADC1, dummy_callback);
     
     //Act
-    ADC1_IntHandler();
+    void (*isr)(void) = ADCIntRegister_fake.arg2_val;
+    isr();
 
     //Assert
     TEST_ASSERT_EQUAL(ADC0_BASE, ADCIntClear_fake.arg0_val);
@@ -201,10 +203,11 @@ void test_adc_int_clears_interrupt(void)
 // • Given ADC is registered with ID 1, when the ISR is called, the correct call-back is called
 void test_adc_hal_int_calls_callback(void) {
     //Arrange
-    adc_hal_register(TIVA_ADC1, dummy_callback);
+    adc_hal_register(ADC1, dummy_callback);
     
     //Act
-    ADC1_IntHandler();
+    void (*isr)(void) = ADCIntRegister_fake.arg2_val;
+    isr();
 
     //Assert
     TEST_ASSERT_EQUAL(1, callback_count);
@@ -214,12 +217,13 @@ void test_adc_hal_int_calls_callback(void) {
 // call-back
 void test_adc_hal_callback_value_correct(void) {
     //Arrange
-    adc_hal_register(TIVA_ADC1, dummy_callback);
+    adc_hal_register(ADC1, dummy_callback);
     ADCSequenceDataGet_fake.custom_fake = ADCSequenceDataGet_fake_adc_value;
     uint32_t ticks_wait = 1000;
 
     //Act
-    ADC1_IntHandler();
+    void (*isr)(void) = ADCIntRegister_fake.arg2_val;
+    isr();
     while (callback_count == 0 && ticks_wait > 0) {
         ticks_wait--;
     }
@@ -231,7 +235,7 @@ void test_adc_hal_callback_value_correct(void) {
 void test_adc_hal_enables_adc_sequence(void)
 {
     // Act
-    adc_hal_register(TIVA_ADC1, dummy_callback);
+    adc_hal_register(ADC1, dummy_callback);
 
     // Assert
     TEST_ASSERT_EQUAL(1, ADCSequenceEnable_fake.call_count);
@@ -242,19 +246,21 @@ void test_adc_hal_enables_adc_sequence(void)
 void test_adc_hal_registers_adc_interrupt(void)
 {
     // Act
-    adc_hal_register(TIVA_ADC1, dummy_callback);
+    adc_hal_register(ADC1, dummy_callback);
+    void (*isr)(void) = ADCIntRegister_fake.arg2_val;
+    isr();
 
     // Assert
     TEST_ASSERT_EQUAL(1, ADCIntRegister_fake.call_count);
     TEST_ASSERT_EQUAL(ADC0_BASE, ADCIntRegister_fake.arg0_val);
     TEST_ASSERT_EQUAL(3, ADCIntRegister_fake.arg1_val);  
-    TEST_ASSERT_EQUAL(ADC1_IntHandler, ADCIntRegister_fake.arg2_val);
+    TEST_ASSERT_EQUAL(isr, ADCIntRegister_fake.arg2_val);
 }
 
 void test_adc_hal_enables_adc_before_other_adc_operations(void)
 {
     // Act
-    adc_hal_register(TIVA_ADC1, dummy_callback);
+    adc_hal_register(ADC1, dummy_callback);
 
     // Assert
     assert_f1_called_before_f2((void*)SysCtlPeripheralEnable, (void*)ADCSequenceConfigure);
@@ -267,7 +273,7 @@ void test_adc_hal_enables_adc_before_other_adc_operations(void)
 void test_adc_hal_enables_adc_interrupt(void)
 {
     // Act
-    adc_hal_register(TIVA_ADC1, dummy_callback);
+    adc_hal_register(ADC1, dummy_callback);
     
     // Assert
     TEST_ASSERT_EQUAL(1, ADCIntEnable_fake.call_count);

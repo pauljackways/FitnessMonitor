@@ -37,7 +37,7 @@ void pollADC(void)
     //
     // Initiate a conversion
     //
-    adc_hal_start_conversion(TIVA_ADC1);
+    adc_hal_start_conversion(ADC1);
 //    g_ulSampCnt++;
 }
 
@@ -68,7 +68,7 @@ void initADC (void)
     //
     initCircBuf (&ADC_inBuffer, ADC_BUF_SIZE);
     // The ADC0 peripheral must be enabled for configuration and use.
-    adc_hal_register(TIVA_ADC1, adc_callback);
+    adc_hal_register(ADC1, adc_callback);
 
 }
 
