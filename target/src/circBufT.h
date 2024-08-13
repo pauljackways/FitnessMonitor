@@ -12,14 +12,15 @@
 // 
 // *******************************************************
 #include <stdint.h>
-
+#define MAX_CIRCBUFT_SIZE 2000
 // *******************************************************
 // Buffer structure
 typedef struct {
 	uint32_t size;		// Number of entries in buffer
 	uint32_t windex;	// index for writing, mod(size)
 	uint32_t rindex;	// index for reading, mod(size)
-	uint32_t *data;		// pointer to the data
+	uint32_t spaceLeft;
+	int32_t *data;		// pointer to the data
 } circBuf_t;
 
 // *******************************************************
@@ -34,7 +35,7 @@ initCircBuf (circBuf_t *buffer, uint32_t size);
 // writeCircBuf: insert entry at the current windex location,
 // advance windex, modulo (buffer size).
 void
-writeCircBuf (circBuf_t *buffer, int32_t entry);
+writeCircBuf (circBuf_t *buffer, uint32_t entry);
 
 // *******************************************************
 // readCircBuf: return entry at the current rindex location,
