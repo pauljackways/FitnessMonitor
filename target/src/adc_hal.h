@@ -13,15 +13,12 @@ typedef enum {
     // Add more ADC IDs as needed
 } adc_id_t;
 
+
 // Ranges for ADC definitions - each hardware vendor gets 10 allocations
 #define TIVA_ADC_START TIVA_ADC1
 #define TIVA_ADC_END (TIVA_ADC1 + 9)
 #define FAKE_ADC_START FAKE_ADC1
 #define FAKE_ADC_END (FAKE_ADC + 9)
-
-// Declare interrupt handlers for each ADC
-void ADC1_IntHandler(void);
-void ADC2_IntHandler(void);
 
 typedef void (*adc_handler)(void);  // Type for the ADC interrupt handler
 

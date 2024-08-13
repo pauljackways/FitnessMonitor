@@ -4,6 +4,11 @@
 #include "driverlib/adc.h"
 #include "driverlib/sysctl.h"
 
+
+// Declare interrupt handlers for each ADC
+void ADC1_IntHandler(void);
+void ADC2_IntHandler(void);
+
 typedef struct { // Struct object for ADC configuration
     uint32_t base;
     uint32_t sequence;

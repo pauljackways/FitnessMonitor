@@ -175,7 +175,8 @@ void test_adc_hal_int_reads_correct_channel_and_sequence(void)
     adc_hal_register(TIVA_ADC1, dummy_callback);
     
     //Act
-    ADC1_IntHandler();
+    void (*isr)(void) = ADCIntRegister_fake.arg2_val;
+    isr();
 
     //Assert
     TEST_ASSERT_EQUAL(ADC0_BASE, ADCSequenceDataGet_fake.arg0_val);
@@ -189,7 +190,8 @@ void test_adc_int_clears_interrupt(void)
     adc_hal_register(TIVA_ADC1, dummy_callback);
     
     //Act
-    ADC1_IntHandler();
+    void (*isr)(void) = ADCIntRegister_fake.arg2_val;
+    isr();
 
     //Assert
     TEST_ASSERT_EQUAL(ADC0_BASE, ADCIntClear_fake.arg0_val);
@@ -204,7 +206,8 @@ void test_adc_hal_int_calls_callback(void) {
     adc_hal_register(TIVA_ADC1, dummy_callback);
     
     //Act
-    ADC1_IntHandler();
+    void (*isr)(void) = ADCIntRegister_fake.arg2_val;
+    isr();
 
     //Assert
     TEST_ASSERT_EQUAL(1, callback_count);
@@ -219,7 +222,8 @@ void test_adc_hal_callback_value_correct(void) {
     uint32_t ticks_wait = 1000;
 
     //Act
-    ADC1_IntHandler();
+    void (*isr)(void) = ADCIntRegister_fake.arg2_val;
+    isr();
     while (callback_count == 0 && ticks_wait > 0) {
         ticks_wait--;
     }
@@ -243,12 +247,14 @@ void test_adc_hal_registers_adc_interrupt(void)
 {
     // Act
     adc_hal_register(TIVA_ADC1, dummy_callback);
+    void (*isr)(void) = ADCIntRegister_fake.arg2_val;
+    isr();
 
     // Assert
     TEST_ASSERT_EQUAL(1, ADCIntRegister_fake.call_count);
     TEST_ASSERT_EQUAL(ADC0_BASE, ADCIntRegister_fake.arg0_val);
     TEST_ASSERT_EQUAL(3, ADCIntRegister_fake.arg1_val);  
-    TEST_ASSERT_EQUAL(ADC1_IntHandler, ADCIntRegister_fake.arg2_val);
+    TEST_ASSERT_EQUAL(isr, ADCIntRegister_fake.arg2_val);
 }
 
 void test_adc_hal_enables_adc_before_other_adc_operations(void)
