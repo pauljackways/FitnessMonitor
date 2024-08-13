@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 #include "inc/hw_memmap.h"
 #include "inc/hw_types.h"
 #include "inc/hw_ints.h"
@@ -30,6 +31,7 @@
 #include "utils/ustdlib.h"
 #include "acc.h"
 #include "math.h"
+#include "driverlib/interrupt.h"
 #include "step_counter_main.h"
 #include "ADC_read.h"
 #include "../libs/freertos/include/FreeRTOS.h"
@@ -254,9 +256,18 @@ int main(void)
     #endif // SERIAL_PLOTTING_ENABLED
 
     deviceStateInfo_t* deviceState = malloc(sizeof(deviceStateInfo_t)); // Stored as one global so it can be accessed by other helper libs within this main module
+    if (deviceState == NULL) {
+        // Handle allocation failure, e.g., log an error and halt
+        while (true) {
+            printf("Failed to allocate memory for deviceState\n");
+        }
+    }
+
+
 
     // Device state
     // Omnibus struct that holds loads of info about the device's current state, so it can be updated from any function
+    memset(deviceState, 0, sizeof(deviceStateInfo_t));
     deviceState->displayMode = DISPLAY_STEPS;
     deviceState->stepsTaken = 0;
     deviceState->stepHigh = false;
@@ -284,6 +295,7 @@ int main(void)
     #ifdef SERIAL_PLOTTING_ENABLED
     SerialInit ();
     #endif // SERIAL_PLOTTING_ENABLED
+    IntMasterEnable();
 
     xTaskCreate(vTaskDisplayUpdate, "display_update", 1024, deviceState, 2, NULL);
     xTaskCreate(vTaskUpdateButtons, "UpdateButtons", 1024, deviceState, 1, NULL);
