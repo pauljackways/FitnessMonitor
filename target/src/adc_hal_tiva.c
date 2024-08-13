@@ -9,6 +9,9 @@
 void ADC1_IntHandler(void);
 void ADC2_IntHandler(void);
 
+typedef void (*adc_handler)(void);  // Type for the ADC interrupt handler
+
+
 typedef struct { // Struct object for ADC configuration
     uint32_t base;
     uint32_t sequence;
