@@ -8,6 +8,6 @@
 
 typedef void(*callback)(uint32_t);
 
-void adc_hal_register(uint32_t id, callback cb);
+void adc_hal_register(adc_id_t id, callback cb);
 
 #endif
