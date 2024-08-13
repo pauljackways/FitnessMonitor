@@ -3,6 +3,7 @@
 
 
 #include <stdint.h>
+#include "inc/hw_memmap.h"
 
 
 typedef enum {
@@ -21,6 +22,8 @@ typedef enum {
 // Declare interrupt handlers for each ADC
 void ADC1_IntHandler(void);
 void ADC2_IntHandler(void);
+
+typedef void (*adc_handler)(void);  // Type for the ADC interrupt handler
 
 // Define the callback type
 typedef void(*callback)(uint32_t);

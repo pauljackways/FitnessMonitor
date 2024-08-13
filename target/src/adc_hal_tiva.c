@@ -1,8 +1,20 @@
 #include <stdint.h>
 #include <stdbool.h>
-#include "adc_hal_tiva.h"
+#include "adc_hal.h"
 #include "driverlib/adc.h"
 #include "driverlib/sysctl.h"
+
+typedef struct { // Struct object for ADC configuration
+    uint32_t base;
+    uint32_t sequence;
+    callback callback;
+    adc_handler handler;
+} adc_config_t;
+
+static adc_config_t adc_configs[] = {  // ADC configuration object initialiations 
+    [TIVA_ADC1] = {ADC0_BASE, 3, (void*)0, ADC1_IntHandler},
+    [TIVA_ADC2] = {ADC1_BASE, 3, (void*)0, ADC2_IntHandler}
+}; // Add more ADC configurations as needed
 
 void ADC1_IntHandler(void) {
     uint32_t value;

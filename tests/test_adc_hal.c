@@ -1,5 +1,5 @@
 #include "unity.h"
-#include "adc_hal_tiva.h"
+#include "adc_hal.h"
 
 #include "fff.h"
 DEFINE_FFF_GLOBALS;
