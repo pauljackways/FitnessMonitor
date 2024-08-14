@@ -35,6 +35,7 @@
 #include "step_counter_main.h"
 #include "ADC_read.h"
 #include "../libs/freertos/include/FreeRTOS.h"
+#include <semphr.h>
 #include "../libs/freertos/include/task.h"
 
 #include "accl_manager.h"
@@ -124,13 +125,16 @@ void flashMessage(deviceStateInfo_t* deviceState, char* toShow)
 }
 
 void getNewGoal(deviceStateInfo_t* deviceState) {
+    xSemaphoreTake(deviceState->newGoalMutex, portMAX_DELAY);
     deviceState->newGoal = readADC() * POT_SCALE_COEFF; // Set the new goal value, scaling to give the desired range
     deviceState->newGoal = (deviceState->newGoal / STEP_GOAL_ROUNDING) * STEP_GOAL_ROUNDING; // Round to the nearest 100 steps
     if (deviceState->newGoal == 0) { // Prevent a goal of zero, instead setting to the minimum goal (this also makes it easier to test the goal-reaching code on a small but non-zero target)
         deviceState->newGoal = STEP_GOAL_ROUNDING;
     }
+    xSemaphoreGive(deviceState->newGoalMutex);
 }
-void vTask75(void* pvParameters) {
+
+void vTaskButtons(void* pvParameters) {
     deviceStateInfo_t* deviceState = (deviceStateInfo_t *)pvParameters;
     const TickType_t xDelay = pdTICKS_TO_MS(75); 
 
@@ -138,6 +142,16 @@ void vTask75(void* pvParameters) {
     {
         btnUpdateState(deviceState);
 
+//         vTaskDelay(xDelay);
+//     }
+// }
+
+// void vTaskGoal(void* pvParameters) {
+//     deviceStateInfo_t* deviceState = (deviceStateInfo_t *)pvParameters;
+//     const TickType_t xDelay = pdTICKS_TO_MS(75); 
+
+//     for (;;) 
+//     {
         pollADC();
         getNewGoal(deviceState);
 
@@ -173,6 +187,8 @@ void vTask200(void* pvParameters) {
         if (deviceState->stepsTaken == 0) {
             deviceState->workoutStartTick = readCurrentTick();
         }
+
+        vTaskDelay(xDelay);
     }
 }
 
@@ -226,28 +242,35 @@ int main(void)
     deviceState->stepsTaken = 0;
     deviceState->stepHigh = false;
     deviceState->currentGoal = TARGET_DISTANCE_DEFAULT;
+    deviceState->newGoal = 0;
+    deviceState->stepsTakenMutex;
+    deviceState->newGoalMutex;
     deviceState->debugMode = false;
     deviceState->mean = (vector3_t){0, 0, 0};
     deviceState->displayUnits = UNITS_SI;
     deviceState->workoutStartTick = 0;
     deviceState->flashTicksLeft = 0;
-
     deviceState->flashMessage = calloc(MAX_STR_LEN + 1, sizeof(char));
     if (deviceState->flashMessage == NULL) {
         while (true) {
             printf("Failed to allocate memory for flashMessage\n");
         }
     }
+    deviceState->stepsTakenMutex = xSemaphoreCreateMutex();
+    deviceState->newGoalMutex = xSemaphoreCreateMutex();
+    if (deviceState->stepsTakenMutex == NULL || deviceState->newGoalMutex == NULL) {
+        // Mutex creation failed
+    }
 
     IntMasterEnable();
 
-    xTaskCreate(&vTask75, "task75", 512, deviceState, 3, NULL);
+    xTaskCreate(&vTaskButtons, "taskButtons", 512, deviceState, 3, NULL);
+    //xTaskCreate(&vTaskGoal, "taskGoal", 512, deviceState, 3, NULL);
     xTaskCreate(&vTask200, "task200", 512, deviceState, 3, NULL);
     xTaskCreate(&vTask5, "task5", 512, deviceState, 3, NULL);
     vTaskStartScheduler();
 
     return 0; // Should never reach here
-
 
 }
 

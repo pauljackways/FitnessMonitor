@@ -21,6 +21,9 @@
 #include "display_manager.h"
 #include "button_manager.h"
 #include "switches.h"
+#include "../libs/freertos/include/FreeRTOS.h"
+#include <semphr.h>
+
 
 
 //********************************************************
@@ -47,7 +50,7 @@ void btnInit(void)
 //********************************************************
 void btnUpdateState(deviceStateInfo_t* deviceStateInfo)
 {
-    displayMode_t currentDisplayMode = deviceStateInfo ->displayMode;
+    displayMode_t currentDisplayMode = deviceStateInfo->displayMode;
     
     updateButtons();
     updateSwitch();
@@ -55,50 +58,51 @@ void btnUpdateState(deviceStateInfo_t* deviceStateInfo)
 
     // Changing screens
     if (checkButton(LEFT) == PUSHED) {
-        deviceStateInfo -> displayMode = (deviceStateInfo -> displayMode + 1) % DISPLAY_NUM_STATES;      //flicker when pressing button
+        deviceStateInfo->displayMode = (deviceStateInfo->displayMode + 1) % DISPLAY_NUM_STATES;      //flicker when pressing button
 
     } else if (checkButton(RIGHT) == PUSHED) {
         // Can't use mod, as enums behave like an unsigned int, so (0-1)%n != n-1
-        if (deviceStateInfo -> displayMode > 0) {
-            deviceStateInfo -> displayMode--;
+        if (deviceStateInfo->displayMode > 0) {
+            deviceStateInfo->displayMode--;
         } else {
-            deviceStateInfo -> displayMode = DISPLAY_NUM_STATES-1;
+            deviceStateInfo->displayMode = DISPLAY_NUM_STATES-1;
         }
     }
 
     // Enable/Disable test mode
     if (isSwitchUp()) {
-        deviceStateInfo -> debugMode = true;
+        deviceStateInfo->debugMode = true;
     } else {
-        deviceStateInfo -> debugMode = false;
+        deviceStateInfo->debugMode = false;
     }
 
 
     // Usage of UP and DOWN buttons
     if (deviceStateInfo -> debugMode) {
         // TEST MODE OPERATION
+        xSemaphoreTake(deviceStateInfo->stepsTakenMutex, portMAX_DELAY);
         if (checkButton(UP) == PUSHED) {
-            deviceStateInfo -> stepsTaken = deviceStateInfo -> stepsTaken + DEBUG_STEP_INCREMENT;
+            deviceStateInfo->stepsTaken = deviceStateInfo->stepsTaken + DEBUG_STEP_INCREMENT;
         }
 
         if (checkButton(DOWN) == PUSHED) {
-            if (deviceStateInfo -> stepsTaken >= DEBUG_STEP_DECREMENT) {
-                deviceStateInfo -> stepsTaken = deviceStateInfo -> stepsTaken - DEBUG_STEP_DECREMENT;
+            if (deviceStateInfo->stepsTaken >= DEBUG_STEP_DECREMENT) {
+                deviceStateInfo->stepsTaken = deviceStateInfo->stepsTaken - DEBUG_STEP_DECREMENT;
             } else {
-                deviceStateInfo -> stepsTaken = 0;
+                deviceStateInfo->stepsTaken = 0;
             }
         }
-
+        xSemaphoreGive(deviceStateInfo->stepsTakenMutex);
 
     } else {
         // NORMAL OPERATION
 
         // Changing units
         if (checkButton(UP) == PUSHED) {
-            if (deviceStateInfo -> displayUnits == UNITS_SI) {
-                deviceStateInfo -> displayUnits = UNITS_ALTERNATE;
+            if (deviceStateInfo->displayUnits == UNITS_SI) {
+                deviceStateInfo->displayUnits = UNITS_ALTERNATE;
             } else {
-                deviceStateInfo -> displayUnits = UNITS_SI;
+                deviceStateInfo->displayUnits = UNITS_SI;
             }
         }
 
@@ -106,13 +110,17 @@ void btnUpdateState(deviceStateInfo_t* deviceStateInfo)
         if ((isDown(DOWN) == true) && (currentDisplayMode != DISPLAY_SET_GOAL) && (allowLongPress)) {
             longPressCount++;
             if (longPressCount >= LONG_PRESS_CYCLES) {
-                deviceStateInfo -> stepsTaken = 0;
+                xSemaphoreTake(deviceStateInfo->stepsTakenMutex, portMAX_DELAY);
+                deviceStateInfo->stepsTaken = 0;
+                xSemaphoreGive(deviceStateInfo->stepsTakenMutex);
                 flashMessage(deviceStateInfo, "Reset!");
             }
         } else {
             if ((currentDisplayMode == DISPLAY_SET_GOAL) && checkButton(DOWN) == PUSHED) {
-                deviceStateInfo -> currentGoal = deviceStateInfo -> newGoal;
-                deviceStateInfo -> displayMode = DISPLAY_STEPS;
+                xSemaphoreTake(deviceStateInfo->newGoalMutex, portMAX_DELAY);
+                deviceStateInfo->currentGoal = deviceStateInfo->newGoal;
+                xSemaphoreGive(deviceStateInfo->newGoalMutex);
+                deviceStateInfo->displayMode = DISPLAY_STEPS;
 
                 allowLongPress = false; // Hacky solution: Protection against double-registering as a short press then a long press
             }
