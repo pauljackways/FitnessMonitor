@@ -159,40 +159,48 @@ void vTaskButtons(void* pvParameters) {
     }
 }
 
-void vTask200(void* pvParameters) {
+void stepCheck(void* pvParameters) {
     deviceStateInfo_t* deviceState = (deviceStateInfo_t *)pvParameters;
-    const TickType_t xDelay = pdTICKS_TO_MS(200); 
+    
+    uint16_t combined = sqrt(deviceState->mean.x*deviceState->mean.x + deviceState->mean.y*deviceState->mean.y + deviceState->mean.z*deviceState->mean.z);
+
+    xSemaphoreTake(deviceState->stepsTakenMutex, portMAX_DELAY);
+    if (combined >= STEP_THRESHOLD_HIGH && deviceState->stepHigh == false) {
+        deviceState->stepHigh = true;
+        deviceState->stepsTaken++;
+
+        // flash a message if the user has reached their goal
+        if (deviceState->stepsTaken == deviceState->currentGoal && deviceState->flashTicksLeft == 0) {
+            flashMessage(deviceState, "Goal reached!");
+        }
+
+    } else if (combined <= STEP_THRESHOLD_LOW) {
+        deviceState->stepHigh = false;
+    }
+    if (deviceState->stepsTaken == 0) {
+        deviceState->workoutStartTick = readCurrentTick();
+    }
+    xSemaphoreGive(deviceState->stepsTakenMutex);
+
+}
+
+void vTaskPedometer(void* pvParameters) {
+    deviceStateInfo_t* deviceState = (deviceStateInfo_t *)pvParameters;
+    const TickType_t xDelay = pdTICKS_TO_MS(50); 
 
     for (;;) 
     {
         acclProcess();
         deviceState->mean = acclMean();
 
-        uint16_t combined = sqrt(deviceState->mean.x*deviceState->mean.x + deviceState->mean.y*deviceState->mean.y + deviceState->mean.z*deviceState->mean.z);
-
-        if (combined >= STEP_THRESHOLD_HIGH && deviceState->stepHigh == false) {
-            deviceState->stepHigh = true;
-            deviceState->stepsTaken++;
-
-            // flash a message if the user has reached their goal
-            if (deviceState->stepsTaken == deviceState->currentGoal && deviceState->flashTicksLeft == 0) {
-                flashMessage(deviceState, "Goal reached!");
-            }
-
-        } else if (combined <= STEP_THRESHOLD_LOW) {
-            deviceState->stepHigh = false;
-        }
-
         // Don't start the workout until the user begins walking
-        if (deviceState->stepsTaken == 0) {
-            deviceState->workoutStartTick = readCurrentTick();
-        }
+        stepCheck(deviceState);
 
         vTaskDelay(xDelay);
     }
 }
 
-void vTask5(void* pvParameters)
+void vTaskDisplay(void* pvParameters)
 {
     deviceStateInfo_t* deviceState = (deviceStateInfo_t *)pvParameters;
     const TickType_t xDelay = pdTICKS_TO_MS(5); 
@@ -266,8 +274,8 @@ int main(void)
 
     xTaskCreate(&vTaskButtons, "taskButtons", 512, deviceState, 3, NULL);
     //xTaskCreate(&vTaskGoal, "taskGoal", 512, deviceState, 3, NULL);
-    xTaskCreate(&vTask200, "task200", 512, deviceState, 3, NULL);
-    xTaskCreate(&vTask5, "task5", 512, deviceState, 3, NULL);
+    xTaskCreate(&vTaskPedometer, "taskPedometer", 512, deviceState, 3, NULL);
+    xTaskCreate(&vTaskDisplay, "taskDisplay", 512, deviceState, 3, NULL);
     vTaskStartScheduler();
 
     return 0; // Should never reach here
