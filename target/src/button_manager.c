@@ -48,9 +48,9 @@ void btnInit(void)
 //********************************************************
 // Run at a fixed rate, modifies the device's state depending on button presses
 //********************************************************
-void btnUpdateState(deviceStateInfo_t* deviceStateInfo)
+void btnUpdateState()
 {
-    displayMode_t currentDisplayMode = deviceStateInfo->displayMode;
+    displayMode_t currentDisplayMode = getDisplayMode();
     
     updateButtons();
     updateSwitch();
@@ -58,69 +58,64 @@ void btnUpdateState(deviceStateInfo_t* deviceStateInfo)
 
     // Changing screens
     if (checkButton(LEFT) == PUSHED) {
-        deviceStateInfo->displayMode = (deviceStateInfo->displayMode + 1) % DISPLAY_NUM_STATES;      //flicker when pressing button
+        setDisplayMode((currentDisplayMode + 1) % DISPLAY_NUM_STATES);      //flicker when pressing button
 
     } else if (checkButton(RIGHT) == PUSHED) {
         // Can't use mod, as enums behave like an unsigned int, so (0-1)%n != n-1
-        if (deviceStateInfo->displayMode > 0) {
-            deviceStateInfo->displayMode--;
+        if (currentDisplayMode > 0) {
+            setDisplayMode(currentDisplayMode - 1);
         } else {
-            deviceStateInfo->displayMode = DISPLAY_NUM_STATES-1;
+            setDisplayMode(DISPLAY_NUM_STATES - 1);
         }
     }
 
     // Enable/Disable test mode
     if (isSwitchUp()) {
-        deviceStateInfo->debugMode = true;
+        setDebugMode(true);
     } else {
-        deviceStateInfo->debugMode = false;
+        setDebugMode(false);
     }
 
 
     // Usage of UP and DOWN buttons
-    if (deviceStateInfo -> debugMode) {
+    if (getDebugMode()) {
         // TEST MODE OPERATION
-        xSemaphoreTake(deviceStateInfo->stepsTakenMutex, portMAX_DELAY);
         if (checkButton(UP) == PUSHED) {
-            deviceStateInfo->stepsTaken = deviceStateInfo->stepsTaken + DEBUG_STEP_INCREMENT;
+            setStepsTaken(getStepsTaken() + DEBUG_STEP_INCREMENT);
         }
 
         if (checkButton(DOWN) == PUSHED) {
-            if (deviceStateInfo->stepsTaken >= DEBUG_STEP_DECREMENT) {
-                deviceStateInfo->stepsTaken = deviceStateInfo->stepsTaken - DEBUG_STEP_DECREMENT;
+            if (getStepsTaken() >= DEBUG_STEP_DECREMENT) {
+                setStepsTaken(getStepsTaken() - DEBUG_STEP_DECREMENT);
             } else {
-                deviceStateInfo->stepsTaken = 0;
+                setStepsTaken(0);
             }
         }
-        xSemaphoreGive(deviceStateInfo->stepsTakenMutex);
 
     } else {
         // NORMAL OPERATION
 
         // Changing units
         if (checkButton(UP) == PUSHED) {
-            if (deviceStateInfo->displayUnits == UNITS_SI) {
-                deviceStateInfo->displayUnits = UNITS_ALTERNATE;
+            if (getDisplayUnits() == UNITS_SI) {
+                setDisplayUnits(UNITS_ALTERNATE);
             } else {
-                deviceStateInfo->displayUnits = UNITS_SI;
+                setDisplayUnits(UNITS_SI);
             }
         }
 
         // Resetting steps and updating goal with long and short presses
-        if ((isDown(DOWN) == true) && (currentDisplayMode != DISPLAY_SET_GOAL) && (allowLongPress)) {
+        if ((isDown(DOWN) == true) && (getDisplayMode() != DISPLAY_SET_GOAL) && (allowLongPress)) {
             longPressCount++;
             if (longPressCount >= LONG_PRESS_CYCLES) {
-                xSemaphoreTake(deviceStateInfo->stepsTakenMutex, portMAX_DELAY);
-                deviceStateInfo->stepsTaken = 0;
-                xSemaphoreGive(deviceStateInfo->stepsTakenMutex);
-                flashMessage(deviceStateInfo, "Reset!");
+                setStepsTaken(0);
+                flashMessage("Reset!");
             }
         } else {
             if ((currentDisplayMode == DISPLAY_SET_GOAL) && checkButton(DOWN) == PUSHED) {
-                xSemaphoreTake(deviceStateInfo->newGoalMutex, portMAX_DELAY);
-                deviceStateInfo->currentGoal = deviceStateInfo->newGoal;
-                xSemaphoreGive(deviceStateInfo->newGoalMutex);
-                deviceStateInfo->displayMode = DISPLAY_STEPS;
+                // TODO: Make direct call to setGoal from here?
+                setCurrentGoal(getNewGoal());
+                setDisplayMode(DISPLAY_STEPS);
 
                 allowLongPress = false; // Hacky solution: Protection against double-registering as a short press then a long press
             }

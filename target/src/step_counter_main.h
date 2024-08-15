@@ -10,31 +10,35 @@
 #ifndef STEP_COUNTER_MAIN_H_
 #define STEP_COUNTER_MAIN_H_
 
+#include "circBufV.h"
+#include "../libs/freertos/include/FreeRTOS.h"
+#include <semphr.h>
+#include "deviceState.h"
+
+/**********************************************************
+ * Constants and types
+ **********************************************************/
+
 #define M_PER_STEP 9/10
 #define MAX_STR_LEN 16
+
+#define RATE_IO_HZ 15
+#define RATE_ACCL_HZ 20
+#define RATE_DISPLAY_HZ 200
+#define FLASH_MESSAGE_TIME 2 // seconds
+
+#ifdef SERIAL_PLOTTING_ENABLED
+#define RATE_SERIAL_PLOT_HZ 100
+#endif // SERIAL_PLOTTING_ENABLED
+
+#define TARGET_DISTANCE_DEFAULT 1000
 
 #define DEBUG_STEP_INCREMENT 100
 #define DEBUG_STEP_DECREMENT 500
 
-#include "circBufV.h"
-#include "../libs/freertos/include/FreeRTOS.h"
-#include <semphr.h>
 
 
 
-typedef enum {
-    DISPLAY_STEPS = 0,
-    DISPLAY_DISTANCE,
-    DISPLAY_SET_GOAL,
-    DISPLAY_NUM_STATES, // Automatically enumerates to the number of display states there can be
-} displayMode_t;
-
-
-typedef enum {
-    UNITS_SI = 0,       // Steps  /km
-    UNITS_ALTERNATE,    // Percent/miles
-    UNITS_NUM_TYPES,
-} displayUnits_t;
 
 
 
@@ -55,7 +59,6 @@ typedef struct {
 } deviceStateInfo_t;
 
 
-void flashMessage(deviceStateInfo_t*, char*);
-void getNewGoal(deviceStateInfo_t*);
+void flashMessage(char*);
 
 #endif /* STEP_COUNTER_MAIN_H_ */

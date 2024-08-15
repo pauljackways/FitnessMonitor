@@ -60,14 +60,16 @@ void displayInit(void)
 
 
 // Update the display, called on a loop
-void displayUpdate(deviceStateInfo_t* deviceState)
+void displayUpdate()
 {
+    uint16_t secondsElapsed = (readCurrentTick() - getWorkoutStartTick())/configTICK_RATE_HZ;
     // Check for flash message override
-    uint16_t secondsElapsed = (readCurrentTick() - deviceState->workoutStartTick)/configTICK_RATE_HZ;
-    if (deviceState->flashTicksLeft > 0) {
+    long flashTicksLeft = getFlashTicksLeft();
+    if (flashTicksLeft > 0) {
+        setFlashTicksLeft(flashTicksLeft - 1);
         char* emptyLine = "                ";
         OLEDStringDraw (emptyLine, 0, 0);
-        displayLine(deviceState->flashMessage, 1, ALIGN_CENTRE);
+        displayLine(getFlashMessage(), 1, ALIGN_CENTRE);
         OLEDStringDraw (emptyLine, 0, 2);
         OLEDStringDraw (emptyLine, 0, 3);
         return;
@@ -76,19 +78,19 @@ void displayUpdate(deviceStateInfo_t* deviceState)
 
     uint32_t mTravelled = 0; // TODO: If I put this inside the case statement it won't compile. Work out why!
 
-    switch (deviceState->displayMode) {
+    switch (getDisplayMode()) {
     case DISPLAY_STEPS:
         displayLine("", 0, ALIGN_CENTRE); // Clear the top line
-        if (deviceState->displayUnits == UNITS_SI) {
-            displayValue("", "steps", deviceState->stepsTaken, 1, ALIGN_CENTRE, false);
+        if (getDisplayUnits() == UNITS_SI) {
+            displayValue("", "steps", getStepsTaken(), 1, ALIGN_CENTRE, false);
         } else {
-            displayValue("", "% of goal", deviceState->stepsTaken * 100 / deviceState->currentGoal, 1, ALIGN_CENTRE, false);
+            displayValue("", "% of goal", getStepsTaken() * 100 / getCurrentGoal(), 1, ALIGN_CENTRE, false);
         }
         displayTime("Time:", secondsElapsed, 2, ALIGN_CENTRE);
         break;
     case DISPLAY_DISTANCE:
         displayTime("Time:", secondsElapsed, 1, ALIGN_CENTRE);
-        mTravelled = deviceState->stepsTaken * M_PER_STEP;
+        mTravelled = getStepsTaken() * M_PER_STEP;
 
         // Protection against division by zero
         uint16_t speed;
@@ -98,7 +100,7 @@ void displayUpdate(deviceStateInfo_t* deviceState)
             speed = mTravelled * MS_TO_KMH; // if zero seconds elapsed, act as if it's at least one
         }
 
-        if (deviceState->displayUnits == UNITS_SI) {
+        if (getDisplayUnits() == UNITS_SI) {
             displayValue("Dist:", "km", mTravelled, 0, ALIGN_CENTRE, true);
             displayValue("Speed", "kph", speed, 2, ALIGN_CENTRE, false);
         } else {
@@ -109,20 +111,20 @@ void displayUpdate(deviceStateInfo_t* deviceState)
         break;
     case DISPLAY_SET_GOAL:
         displayLine("Set goal:", 0, ALIGN_CENTRE);
-        displayValue("Current:", "", deviceState->currentGoal, 2, ALIGN_CENTRE, false);
+        displayValue("Current:", "", getCurrentGoal(), 2, ALIGN_CENTRE, false);
 
         // Display the step/distance preview
         char toDraw[DISPLAY_WIDTH+1]; // Must be one character longer to account for EOFs
-        uint16_t distance = deviceState->newGoal * M_PER_STEP;
-        if (deviceState->displayUnits != UNITS_SI) {
+        uint16_t distance = getNewGoal() * M_PER_STEP;
+        if (getDisplayUnits() != UNITS_SI) {
             distance = distance * KM_TO_MILES;
         }
 
         // if <10 km/miles, use a decimal point. Otherwise display whole units (to save space)
         if (distance < 10*1000) {
-            usnprintf(toDraw, DISPLAY_WIDTH + 1, "%d stps/%d.%01d%s", deviceState->newGoal, distance / 1000, (distance % 1000)/100, deviceState->displayUnits == UNITS_SI ? "km" : "mi");
+            usnprintf(toDraw, DISPLAY_WIDTH + 1, "%d stps/%d.%01d%s", getNewGoal(), distance / 1000, (distance % 1000)/100, getDisplayUnits() == UNITS_SI ? "km" : "mi");
         } else {
-            usnprintf(toDraw, DISPLAY_WIDTH + 1, "%d stps/%d%s", deviceState->newGoal, distance / 1000, deviceState->displayUnits == UNITS_SI ? "km" : "mi");
+            usnprintf(toDraw, DISPLAY_WIDTH + 1, "%d stps/%d%s", getNewGoal(), distance / 1000, getDisplayUnits() == UNITS_SI ? "km" : "mi");
         }
 
         displayLine(toDraw, 1, ALIGN_CENTRE);

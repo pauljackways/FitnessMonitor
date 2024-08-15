@@ -17,6 +17,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include "deviceState.h"
 #include "inc/hw_memmap.h"
 #include "inc/hw_types.h"
 #include "inc/hw_ints.h"
@@ -35,7 +36,6 @@
 #include "step_counter_main.h"
 #include "ADC_read.h"
 #include "../libs/freertos/include/FreeRTOS.h"
-#include <semphr.h>
 #include "../libs/freertos/include/task.h"
 
 #include "accl_manager.h"
@@ -48,21 +48,10 @@
 /**********************************************************
  * Constants and types
  **********************************************************/
-#define RATE_IO_HZ 15
-#define RATE_ACCL_HZ 20
-#define RATE_DISPLAY_HZ 200
-#define FLASH_MESSAGE_TIME 2 // seconds
-
-#ifdef SERIAL_PLOTTING_ENABLED
-#define RATE_SERIAL_PLOT_HZ 100
-#endif // SERIAL_PLOTTING_ENABLED
-
 
 #define STEP_GOAL_ROUNDING 100
 #define STEP_THRESHOLD_HIGH 270
 #define STEP_THRESHOLD_LOW 235
-
-#define TARGET_DISTANCE_DEFAULT 1000
 
 #define POT_SCALE_COEFF 20000/4095 // in steps, adjusting to account for the potentiometer's maximum possible reading
 
@@ -109,37 +98,64 @@ unsigned long readCurrentTick(void)
 
 
 // Flash a message onto the screen, overriding everything else
-void flashMessage(deviceStateInfo_t* deviceState, char* toShow)
+void flashMessage(char* toShow)
 {
-    deviceState->flashTicksLeft = RATE_DISPLAY_HZ * FLASH_MESSAGE_TIME;
+    setFlashTicksLeft(RATE_DISPLAY_HZ * FLASH_MESSAGE_TIME);
+
+    char tempMessage[MAX_STR_LEN + 1] = {0};
 
     uint8_t i = 0;
     while (toShow[i] != '\0' && i < MAX_STR_LEN) {
-        (deviceState->flashMessage)[i] = toShow[i];
-
+        tempMessage[i] = toShow[i];
         i++;
     }
+    tempMessage[i] = '\0';
 
-    deviceState->flashMessage[i] = '\0';
+    setFlashMessage(tempMessage);
+
 }
 
-void getNewGoal(deviceStateInfo_t* deviceState) {
-    xSemaphoreTake(deviceState->newGoalMutex, portMAX_DELAY);
-    deviceState->newGoal = readADC() * POT_SCALE_COEFF; // Set the new goal value, scaling to give the desired range
-    deviceState->newGoal = (deviceState->newGoal / STEP_GOAL_ROUNDING) * STEP_GOAL_ROUNDING; // Round to the nearest 100 steps
-    if (deviceState->newGoal == 0) { // Prevent a goal of zero, instead setting to the minimum goal (this also makes it easier to test the goal-reaching code on a small but non-zero target)
-        deviceState->newGoal = STEP_GOAL_ROUNDING;
+void setGoal() {
+    uint32_t newGoal = ((readADC() * POT_SCALE_COEFF) / STEP_GOAL_ROUNDING) * STEP_GOAL_ROUNDING;
+    if (newGoal == 0) { // Prevent a goal of zero, instead setting to the minimum goal (this also makes it easier to test the goal-reaching code on a small but non-zero target)
+        newGoal = STEP_GOAL_ROUNDING;
     }
-    xSemaphoreGive(deviceState->newGoalMutex);
+    setNewGoal(newGoal); //Set the new goal value, scaling to give the desired range
+
+}
+
+void stepCheck() {
+    
+    bool stepHigh = getStepHigh();
+    vector3_t mean = getMean();
+    uint16_t combined = sqrt(mean.x*mean.x + mean.y*mean.y + mean.z*mean.z);
+
+    if (combined >= STEP_THRESHOLD_HIGH && stepHigh == false) {
+        setStepsTaken(getStepsTaken() + 1);
+        setStepHigh(true);
+
+        // flash a message if the user has reached their goal
+        if (getStepsTaken() >= getCurrentGoal()) {
+            //TODO: MESSAGE QUEUE HERE
+            flashMessage("Goal reached!");
+        }
+
+    } else if (combined <= STEP_THRESHOLD_LOW) {
+        setStepHigh(false);
+    }
+    //TODO: check how this works for efficacy
+    if (getStepsTaken() == 0) {
+        setWorkoutStartTick(readCurrentTick());
+    }
+
 }
 
 void vTaskButtons(void* pvParameters) {
-    deviceStateInfo_t* deviceState = (deviceStateInfo_t *)pvParameters;
     const TickType_t xDelay = pdMS_TO_TICKS(1000/RATE_IO_HZ); 
 
     for (;;) 
     {
-        btnUpdateState(deviceState);
+        btnUpdateState();
 
 //         vTaskDelay(xDelay);
 //     }
@@ -152,48 +168,22 @@ void vTaskButtons(void* pvParameters) {
 //     for (;;) 
 //     {
         pollADC();
-        getNewGoal(deviceState);
+        setGoal();
 
         vTaskDelay(xDelay);
     }
 }
 
-void stepCheck(void* pvParameters) {
-    deviceStateInfo_t* deviceState = (deviceStateInfo_t *)pvParameters;
-    
-    uint16_t combined = sqrt(deviceState->mean.x*deviceState->mean.x + deviceState->mean.y*deviceState->mean.y + deviceState->mean.z*deviceState->mean.z);
-
-    xSemaphoreTake(deviceState->stepsTakenMutex, portMAX_DELAY);
-    if (combined >= STEP_THRESHOLD_HIGH && deviceState->stepHigh == false) {
-        deviceState->stepHigh = true;
-        deviceState->stepsTaken++;
-
-        // flash a message if the user has reached their goal
-        if (deviceState->stepsTaken == deviceState->currentGoal && deviceState->flashTicksLeft == 0) {
-            flashMessage(deviceState, "Goal reached!");
-        }
-
-    } else if (combined <= STEP_THRESHOLD_LOW) {
-        deviceState->stepHigh = false;
-    }
-    if (deviceState->stepsTaken == 0) {
-        deviceState->workoutStartTick = readCurrentTick();
-    }
-    xSemaphoreGive(deviceState->stepsTakenMutex);
-
-}
-
 void vTaskPedometer(void* pvParameters) {
-    deviceStateInfo_t* deviceState = (deviceStateInfo_t *)pvParameters;
     const TickType_t xDelay = pdMS_TO_TICKS(1000/RATE_ACCL_HZ); 
 
     for (;;) 
     {
         acclProcess();
-        deviceState->mean = acclMean();
+        setMean(acclMean());
 
         // Don't start the workout until the user begins walking
-        stepCheck(deviceState);
+        stepCheck();
 
         vTaskDelay(xDelay);
     }
@@ -201,17 +191,11 @@ void vTaskPedometer(void* pvParameters) {
 
 void vTaskDisplay(void* pvParameters)
 {
-    deviceStateInfo_t* deviceState = (deviceStateInfo_t *)pvParameters;
     const TickType_t xDelay = pdMS_TO_TICKS(1000/RATE_DISPLAY_HZ); 
 
     for (;;)
     {
-
-        if (deviceState->flashTicksLeft > 0) {
-            deviceState->flashTicksLeft--;
-        }
-
-        displayUpdate(deviceState);
+        displayUpdate();
 
         vTaskDelay(xDelay);
     }
@@ -232,44 +216,22 @@ int main(void)
     btnInit();
     acclInit();
     initADC();
+    initDeviceState();
+    initFlashMessage(MAX_STR_LEN);
 
     for (volatile int32_t i = 0; i < 10000000; i++);
 
-    // Initialize the deviceState struct
-    deviceStateInfo_t* deviceState = calloc(1, sizeof(deviceStateInfo_t)); 
-    if (deviceState == NULL) {
-        while (true) {
-            printf("Failed to allocate memory for deviceState\n");
-        }
-    }
-    deviceState->displayMode = DISPLAY_STEPS;
-    deviceState->stepsTaken = 0;
-    deviceState->stepHigh = false;
-    deviceState->currentGoal = TARGET_DISTANCE_DEFAULT;
-    deviceState->newGoal = 0;
-    deviceState->debugMode = false;
-    deviceState->mean = (vector3_t){0, 0, 0};
-    deviceState->displayUnits = UNITS_SI;
-    deviceState->workoutStartTick = 0;
-    deviceState->flashTicksLeft = 0;
-    deviceState->flashMessage = calloc(MAX_STR_LEN + 1, sizeof(char));
-    if (deviceState->flashMessage == NULL) {
-        while (true) {
-            printf("Failed to allocate memory for flashMessage\n");
-        }
-    }
-    deviceState->stepsTakenMutex = xSemaphoreCreateMutex();
-    deviceState->newGoalMutex = xSemaphoreCreateMutex();
-    if (deviceState->stepsTakenMutex == NULL || deviceState->newGoalMutex == NULL) {
-        // Mutex creation failed
-    }
+
+    setDisplayMode(DISPLAY_STEPS);
+    setCurrentGoal(TARGET_DISTANCE_DEFAULT);
+    setDisplayUnits(UNITS_SI);
 
     IntMasterEnable();
 
-    xTaskCreate(&vTaskButtons, "taskButtons", 512, deviceState, 3, NULL);
+    xTaskCreate(&vTaskButtons, "taskButtons", 512, NULL, 3, NULL);
     //xTaskCreate(&vTaskGoal, "taskGoal", 512, deviceState, 3, NULL);
-    xTaskCreate(&vTaskPedometer, "taskPedometer", 512, deviceState, 2, NULL);
-    xTaskCreate(&vTaskDisplay, "taskDisplay", 512, deviceState, 1, NULL);
+    xTaskCreate(&vTaskPedometer, "taskPedometer", 512, NULL, 2, NULL);
+    xTaskCreate(&vTaskDisplay, "taskDisplay", 512, NULL, 1, NULL);
     vTaskStartScheduler();
 
     return 0; // Should never reach here

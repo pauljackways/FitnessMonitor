@@ -20,17 +20,9 @@ typedef enum {
     ALIGN_RIGHT,
 } textAlignment_t;
 
-typedef struct {
-    uint32_t stepsTaken;
-    uint32_t currentGoal;
-    uint32_t newGoal;
-    uint16_t secondsElapsed;
-    displayMode_t displayMode;
-} stepsInfo_t;
-
 
 void displayInit(void); // Initalize the display
-void displayUpdate(deviceStateInfo_t* deviceState); // Update the display, given the device's state and the length of the current workout
+void displayUpdate(void); // Update the display, given the device's state and the length of the current workout
 
 #define DISPLAY_WIDTH 16
 
