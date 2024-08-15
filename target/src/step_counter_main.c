@@ -157,16 +157,15 @@ void vTaskButtons(void* pvParameters) {
     {
         btnUpdateState();
 
-//         vTaskDelay(xDelay);
-//     }
-// }
+        vTaskDelay(xDelay);
+    }
+}
 
-// void vTaskGoal(void* pvParameters) {
-//     deviceStateInfo_t* deviceState = (deviceStateInfo_t *)pvParameters;
-//     const TickType_t xDelay = pdTICKS_TO_MS(75); 
+void vTaskGoal(void* pvParameters) {
+    const TickType_t xDelay = pdMS_TO_TICKS(RATE_ADC_HZ); 
 
-//     for (;;) 
-//     {
+    for (;;) 
+    {
         pollADC();
         setGoal();
 
@@ -228,10 +227,10 @@ int main(void)
 
     IntMasterEnable();
 
-    xTaskCreate(&vTaskButtons, "taskButtons", 512, NULL, 3, NULL);
-    //xTaskCreate(&vTaskGoal, "taskGoal", 512, deviceState, 3, NULL);
-    xTaskCreate(&vTaskPedometer, "taskPedometer", 512, NULL, 2, NULL);
-    xTaskCreate(&vTaskDisplay, "taskDisplay", 512, NULL, 1, NULL);
+    xTaskCreate(&vTaskButtons, "taskButtons", 256, NULL, 3, NULL);
+    xTaskCreate(&vTaskGoal, "taskGoal", 256, NULL, 3, NULL);
+    xTaskCreate(&vTaskPedometer, "taskPedometer", 256, NULL, 2, NULL);
+    xTaskCreate(&vTaskDisplay, "taskDisplay", 256, NULL, 1, NULL);
     vTaskStartScheduler();
 
     return 0; // Should never reach here

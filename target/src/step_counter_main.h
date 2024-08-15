@@ -24,6 +24,7 @@
 
 #define RATE_IO_HZ 15
 #define RATE_ACCL_HZ 20
+#define RATE_ADC_HZ 20
 #define RATE_DISPLAY_HZ 200
 #define FLASH_MESSAGE_TIME 2 // seconds
 
