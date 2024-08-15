@@ -60,9 +60,10 @@ void displayInit(void)
 
 
 // Update the display, called on a loop
-void displayUpdate(deviceStateInfo_t* deviceState, uint16_t secondsElapsed)
+void displayUpdate(deviceStateInfo_t* deviceState)
 {
     // Check for flash message override
+    uint16_t secondsElapsed = (readCurrentTick() - deviceState->workoutStartTick)/configTICK_RATE_HZ;
     if (deviceState->flashTicksLeft > 0) {
         char* emptyLine = "                ";
         OLEDStringDraw (emptyLine, 0, 0);

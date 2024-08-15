@@ -48,11 +48,10 @@
 /**********************************************************
  * Constants and types
  **********************************************************/
-#define RATE_SYSTICK_HZ 1000
-#define RATE_IO_HZ 75
-#define RATE_ACCL_HZ 200
-#define RATE_DISPLAY_UPDATE_HZ 5
-#define FLASH_MESSAGE_TIME 3/2 // seconds
+#define RATE_IO_HZ 15
+#define RATE_ACCL_HZ 20
+#define RATE_DISPLAY_HZ 200
+#define FLASH_MESSAGE_TIME 2 // seconds
 
 #ifdef SERIAL_PLOTTING_ENABLED
 #define RATE_SERIAL_PLOT_HZ 100
@@ -112,7 +111,7 @@ unsigned long readCurrentTick(void)
 // Flash a message onto the screen, overriding everything else
 void flashMessage(deviceStateInfo_t* deviceState, char* toShow)
 {
-    deviceState->flashTicksLeft = RATE_DISPLAY_UPDATE_HZ * FLASH_MESSAGE_TIME;
+    deviceState->flashTicksLeft = RATE_DISPLAY_HZ * FLASH_MESSAGE_TIME;
 
     uint8_t i = 0;
     while (toShow[i] != '\0' && i < MAX_STR_LEN) {
@@ -136,7 +135,7 @@ void getNewGoal(deviceStateInfo_t* deviceState) {
 
 void vTaskButtons(void* pvParameters) {
     deviceStateInfo_t* deviceState = (deviceStateInfo_t *)pvParameters;
-    const TickType_t xDelay = pdTICKS_TO_MS(75); 
+    const TickType_t xDelay = pdMS_TO_TICKS(1000/RATE_IO_HZ); 
 
     for (;;) 
     {
@@ -186,7 +185,7 @@ void stepCheck(void* pvParameters) {
 
 void vTaskPedometer(void* pvParameters) {
     deviceStateInfo_t* deviceState = (deviceStateInfo_t *)pvParameters;
-    const TickType_t xDelay = pdTICKS_TO_MS(50); 
+    const TickType_t xDelay = pdMS_TO_TICKS(1000/RATE_ACCL_HZ); 
 
     for (;;) 
     {
@@ -203,7 +202,7 @@ void vTaskPedometer(void* pvParameters) {
 void vTaskDisplay(void* pvParameters)
 {
     deviceStateInfo_t* deviceState = (deviceStateInfo_t *)pvParameters;
-    const TickType_t xDelay = pdTICKS_TO_MS(5); 
+    const TickType_t xDelay = pdMS_TO_TICKS(1000/RATE_DISPLAY_HZ); 
 
     for (;;)
     {
@@ -212,8 +211,7 @@ void vTaskDisplay(void* pvParameters)
             deviceState->flashTicksLeft--;
         }
 
-        uint16_t secondsElapsed = (readCurrentTick() - deviceState->workoutStartTick)/RATE_SYSTICK_HZ;
-        displayUpdate(deviceState, secondsElapsed);
+        displayUpdate(deviceState);
 
         vTaskDelay(xDelay);
     }
@@ -237,22 +235,18 @@ int main(void)
 
     for (volatile int32_t i = 0; i < 10000000; i++);
 
-    deviceStateInfo_t* deviceState = malloc(sizeof(deviceStateInfo_t)); 
+    // Initialize the deviceState struct
+    deviceStateInfo_t* deviceState = calloc(1, sizeof(deviceStateInfo_t)); 
     if (deviceState == NULL) {
         while (true) {
             printf("Failed to allocate memory for deviceState\n");
         }
     }
-
-    // Initialize the deviceState struct
-    memset(deviceState, 0, sizeof(deviceStateInfo_t));
     deviceState->displayMode = DISPLAY_STEPS;
     deviceState->stepsTaken = 0;
     deviceState->stepHigh = false;
     deviceState->currentGoal = TARGET_DISTANCE_DEFAULT;
     deviceState->newGoal = 0;
-    deviceState->stepsTakenMutex;
-    deviceState->newGoalMutex;
     deviceState->debugMode = false;
     deviceState->mean = (vector3_t){0, 0, 0};
     deviceState->displayUnits = UNITS_SI;
@@ -274,8 +268,8 @@ int main(void)
 
     xTaskCreate(&vTaskButtons, "taskButtons", 512, deviceState, 3, NULL);
     //xTaskCreate(&vTaskGoal, "taskGoal", 512, deviceState, 3, NULL);
-    xTaskCreate(&vTaskPedometer, "taskPedometer", 512, deviceState, 3, NULL);
-    xTaskCreate(&vTaskDisplay, "taskDisplay", 512, deviceState, 3, NULL);
+    xTaskCreate(&vTaskPedometer, "taskPedometer", 512, deviceState, 2, NULL);
+    xTaskCreate(&vTaskDisplay, "taskDisplay", 512, deviceState, 1, NULL);
     vTaskStartScheduler();
 
     return 0; // Should never reach here
