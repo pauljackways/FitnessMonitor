@@ -21,6 +21,37 @@ void reset_fff(void)
     FFF_RESET_HISTORY();
 }
 
+void press_button(uint8_t butName) {
+    switch(butName) {
+        case UP:
+            GPIOPinRead_fake.arg0_val = UP_BUT_PORT_BASE;
+            GPIOPinRead_fake.arg1_val = UP_BUT_PIN;
+            GPIOPinRead_fake.return_val = UP_BUT_PIN;
+            break;
+        case DOWN:
+            GPIOPinRead_fake.arg0_val = DOWN_BUT_PORT_BASE;
+            GPIOPinRead_fake.arg1_val = DOWN_BUT_PIN;
+            GPIOPinRead_fake.return_val = DOWN_BUT_PIN;
+            break;
+        case LEFT:
+            GPIOPinRead_fake.arg0_val = LEFT_BUT_PORT_BASE;
+            GPIOPinRead_fake.arg1_val = LEFT_BUT_PIN;
+            GPIOPinRead_fake.return_val = LEFT_BUT_PIN;
+            break;
+        case RIGHT:
+            GPIOPinRead_fake.arg0_val = RIGHT_BUT_PORT_BASE;
+            GPIOPinRead_fake.arg1_val = RIGHT_BUT_PIN;
+            GPIOPinRead_fake.return_val = RIGHT_BUT_PIN;
+            break;
+        default:
+            return;
+    }
+    //To get past debouncing
+    for (volatile int32_t i = 0; i < 10; i++) {
+        updateButtons();
+    }
+}
+
 /* Unity setup and teardown */
 void setUp(void)
 {
@@ -35,14 +66,7 @@ void tearDown(void)
 void test_buttons4_initialises_up(void)
 {
     //Arrange
-    GPIOPinRead_fake.arg0_val = UP_BUT_PORT_BASE;
-    GPIOPinRead_fake.arg1_val = UP_BUT_PIN;
-    GPIOPinRead_fake.return_val = UP_BUT_PIN;
-
-    //To get past debouncing
-    for (volatile int32_t i = 0; i < 10000000; i++) {
-        updateButtons();
-    }
+    press_button(UP);
 
     // Act
     uint8_t result = checkButton(UP);
@@ -54,14 +78,8 @@ void test_buttons4_initialises_up(void)
 void test_buttons4_initialises_down(void)
 {
     //Arrange
-    GPIOPinRead_fake.arg0_val = DOWN_BUT_PORT_BASE;
-    GPIOPinRead_fake.arg1_val = DOWN_BUT_PIN;
-    GPIOPinRead_fake.return_val = DOWN_BUT_PIN;
+    press_button(DOWN);
 
-    //To get past debouncing
-    for (volatile int32_t i = 0; i < 10000000; i++) {
-        updateButtons();
-    }
 
     // Act
     uint8_t result = checkButton(DOWN);
@@ -73,14 +91,9 @@ void test_buttons4_initialises_down(void)
 void test_buttons4_initialises_left(void)
 {
     //Arrange
-    GPIOPinRead_fake.arg0_val = LEFT_BUT_PORT_BASE;
-    GPIOPinRead_fake.arg1_val = LEFT_BUT_PIN;
-    GPIOPinRead_fake.return_val = LEFT_BUT_PIN;
 
-    //To get past debouncing
-    for (volatile int32_t i = 0; i < 10000000; i++) {
-        updateButtons();
-    }
+    press_button(LEFT);
+
 
     // Act
     uint8_t result = checkButton(LEFT);
@@ -92,14 +105,9 @@ void test_buttons4_initialises_left(void)
 void test_buttons4_initialises_right(void)
 {
     //Arrange
-    GPIOPinRead_fake.arg0_val = RIGHT_BUT_PORT_BASE;
-    GPIOPinRead_fake.arg1_val = RIGHT_BUT_PIN;
-    GPIOPinRead_fake.return_val = RIGHT_BUT_PIN;
 
-    //To get past debouncing
-    for (volatile int32_t i = 0; i < 10000000; i++) {
-        updateButtons();
-    }
+    press_button(RIGHT);
+
 
     // Act
     uint8_t result = checkButton(RIGHT);
