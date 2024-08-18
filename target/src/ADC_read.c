@@ -43,20 +43,13 @@ void pollADC(void)
 
 //*****************************************************************************
 //
-// The handler for the ADC conversion complete interrupt.
+// The callback for the ADC conversion complete interrupt.
 // Writes to the circular buffer.
 //
 //*****************************************************************************
-void ADCIntHandler(uint32_t ulValue)
-{	
-	//
-	// Place it in the circular buffer (advancing write index)
-	writeCircBuf (&ADC_inBuffer, ulValue);
-	//                         
-}
 
 void adc_callback(uint32_t ulValue) {
-    ADCIntHandler(ulValue);
+    writeCircBuf (&ADC_inBuffer, ulValue);
 }
 
 //*****************************************************************************
