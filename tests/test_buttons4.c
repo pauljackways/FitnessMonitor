@@ -39,6 +39,7 @@ void test_buttons4_initialises_up(void)
     GPIOPinRead_fake.arg1_val = UP_BUT_PIN;
     GPIOPinRead_fake.return_val = UP_BUT_PIN;
 
+    //To get past debouncing
     for (volatile int32_t i = 0; i < 10000000; i++) {
         updateButtons();
     }
@@ -49,3 +50,78 @@ void test_buttons4_initialises_up(void)
     // Assert
     TEST_ASSERT_EQUAL(PUSHED, result);
 }
+
+void test_buttons4_initialises_down(void)
+{
+    //Arrange
+    GPIOPinRead_fake.arg0_val = DOWN_BUT_PORT_BASE;
+    GPIOPinRead_fake.arg1_val = DOWN_BUT_PIN;
+    GPIOPinRead_fake.return_val = DOWN_BUT_PIN;
+
+    //To get past debouncing
+    for (volatile int32_t i = 0; i < 10000000; i++) {
+        updateButtons();
+    }
+
+    // Act
+    uint8_t result = checkButton(DOWN);
+
+    // Assert
+    TEST_ASSERT_EQUAL(PUSHED, result);
+}
+
+void test_buttons4_initialises_left(void)
+{
+    //Arrange
+    GPIOPinRead_fake.arg0_val = LEFT_BUT_PORT_BASE;
+    GPIOPinRead_fake.arg1_val = LEFT_BUT_PIN;
+    GPIOPinRead_fake.return_val = LEFT_BUT_PIN;
+
+    //To get past debouncing
+    for (volatile int32_t i = 0; i < 10000000; i++) {
+        updateButtons();
+    }
+
+    // Act
+    uint8_t result = checkButton(LEFT);
+
+    // Assert
+    TEST_ASSERT_EQUAL(PUSHED, result);
+}
+
+void test_buttons4_initialises_right(void)
+{
+    //Arrange
+    GPIOPinRead_fake.arg0_val = RIGHT_BUT_PORT_BASE;
+    GPIOPinRead_fake.arg1_val = RIGHT_BUT_PIN;
+    GPIOPinRead_fake.return_val = RIGHT_BUT_PIN;
+
+    //To get past debouncing
+    for (volatile int32_t i = 0; i < 10000000; i++) {
+        updateButtons();
+    }
+
+    // Act
+    uint8_t result = checkButton(RIGHT);
+
+    // Assert
+    TEST_ASSERT_EQUAL(PUSHED, result);
+}
+
+void test_buttons4_debouncing(void)
+{
+    //Arrange
+    GPIOPinRead_fake.arg0_val = UP_BUT_PORT_BASE;
+    GPIOPinRead_fake.arg1_val = UP_BUT_PIN;
+    GPIOPinRead_fake.return_val = UP_BUT_PIN;
+
+    //One update should not be considered a push
+    updateButtons();
+
+    // Act
+    uint8_t result = checkButton(UP);
+
+    // Assert
+    TEST_ASSERT_EQUAL(NO_CHANGE, result);
+}
+
