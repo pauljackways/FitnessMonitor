@@ -21,7 +21,13 @@
 // Constants
 //*****************************************************************************
 enum butNames {UP = 0, DOWN, LEFT, RIGHT, NUM_BUTS};
-enum butStates {RELEASED = 0, PUSHED, NO_CHANGE};
+enum butStates {RELEASED = 0, PUSHED, NONE};
+typedef enum {
+    NO_CHANGE,
+    SHORT,
+    LONG,
+    DOUBLE
+} ButtonPressType;
 // UP button
 #define UP_BUT_PERIPH  SYSCTL_PERIPH_GPIOE
 #define UP_BUT_PORT_BASE  GPIO_PORTE_BASE
@@ -63,15 +69,16 @@ initButtons (void);
 void
 updateButtons (void);
 
-// *******************************************************
-// checkButton: Function returns the new button state if the button state
-// (PUSHED or RELEASED) has changed since the last call, otherwise returns
-// NO_CHANGE.  The argument butName should be one of constants in the
-// enumeration butStates, excluding 'NUM_BUTS'. Safe under interrupt.
-uint8_t
-checkButton (uint8_t butName);
+
+ButtonPressType checkPressType(uint8_t butName);
 
 // Function which returns current button state. Abstracts GPIO function calls for other modules
 bool isDown(uint8_t butName);
+
+bool isUnpressed(uint8_t butName);
+
+#define TEST_DURATION 20 // Define the test duration as 40 cycles
+
+
 
 #endif /*BUTTONS_H_*/
