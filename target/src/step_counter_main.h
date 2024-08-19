@@ -20,7 +20,7 @@
 #define M_PER_STEP 9/10
 #define MAX_STR_LEN 16
 
-#define RATE_IO_HZ 15
+#define RATE_IO_HZ 60
 #define RATE_ACCL_HZ 20
 #define RATE_ADC_HZ 20
 #define RATE_DISPLAY_HZ 200

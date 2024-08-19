@@ -33,6 +33,24 @@ static bool but_state[NUM_BUTS];	// Corresponds to the electrical state
 static uint8_t but_count[NUM_BUTS];
 static bool but_flag[NUM_BUTS];
 static bool but_normal[NUM_BUTS];   // Corresponds to the electrical state
+static uint8_t press_count[NUM_BUTS];
+static uint8_t unpress_count[NUM_BUTS];
+static uint8_t test_count[NUM_BUTS];
+static uint8_t but_count[NUM_BUTS];
+static bool already_pressed[NUM_BUTS];
+static bool prevent_long[NUM_BUTS];
+
+
+// Function which returns current button state. Abstracts GPIO function calls for other modules
+bool isDown(uint8_t butName) {
+    return but_state[butName];
+}
+
+
+// Function which returns current button state. Abstracts GPIO function calls for other modules
+bool isUnpressed(uint8_t butName) {
+    return but_state[butName] == but_normal[butName];
+}
 
 // *******************************************************
 // initButtons: Initialise the variables associated with the set of buttons
@@ -120,25 +138,57 @@ updateButtons (void)
 	}
 }
 
-// *******************************************************
-// checkButton: Function returns the new button logical state if the button
-// logical state (PUSHED or RELEASED) has changed since the last call,
-// otherwise returns NO_CHANGE.
-uint8_t
-checkButton (uint8_t butName)
+
+ButtonPressType checkPressType(uint8_t butName) // Returns button press state on state change
 {
-	if (but_flag[butName])
-	{
-		but_flag[butName] = false;
-		if (but_state[butName] == but_normal[butName])
-			return RELEASED;
-		else
-			return PUSHED;
-	}
-	return NO_CHANGE;
+    //ButtonPressType pressType = NO_CHANGE; // Initialised instead of just returned so as to avoid concurrency issues
+    if (but_flag[butName] == true) {
+        but_flag[butName] = false;
+        prevent_long[butName] = false;
+        if (!isUnpressed(butName)) { 
+            press_count[butName] = 0;
+            test_count[butName] = 0;
+            if (unpress_count[butName] > 0 && unpress_count[butName] < TEST_DURATION) {
+                press_count[butName] = 0;
+                unpress_count[butName] = 0;
+                test_count[butName] = 0;
+                return DOUBLE;
+            }
+        } else {
+            unpress_count[butName] = 0;
+        }
+        return NO_CHANGE;
+    } else {
+        if (!isUnpressed(butName) && !prevent_long[butName]) {
+            test_count[butName]++;
+            press_count[butName]++;
+            if (press_count[butName] > TEST_DURATION * 4) {
+                press_count[butName] = 0;
+                unpress_count[butName] = 0;
+                test_count[butName] = 0;
+                prevent_long[butName] = true;
+                return LONG;
+            }
+        } else {
+            test_count[butName]++;
+            unpress_count[butName]++;
+            if (test_count[butName] > TEST_DURATION && unpress_count[butName] > 0 && unpress_count[butName] < TEST_DURATION && press_count[butName] > 0 && press_count[butName] < TEST_DURATION) {
+                press_count[butName] = 0;
+                unpress_count[butName] = 0;
+                test_count[butName] = 0;
+                return SHORT;
+            }
+            if (unpress_count[butName] > TEST_DURATION * 8) {
+                unpress_count[butName] = TEST_DURATION * 6;
+            }
+
+        }
+        return NO_CHANGE;
+    }
+
 }
 
-// Function which returns current button state. Abstracts GPIO function calls for other modules
-bool isDown(uint8_t butName) {
-    return but_state[butName];
-}
+
+
+
+

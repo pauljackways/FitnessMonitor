@@ -103,9 +103,21 @@ void press_button(uint8_t butName, uint8_t butState) {
             return;
     }
     //To get past debouncing
-    for (volatile int32_t i = 0; i < LONG_PRESS_CYCLES-1; i++) {
+    for (volatile int32_t i = 0; i < TEST_DURATION; i++) {
         btnUpdateState();
+        checkPressType(butName);
     }
+}
+
+ButtonPressType updateLoop(uint8_t butName, uint32_t loops, ButtonPressType target){
+    ButtonPressType result = NO_CHANGE;
+    for (volatile uint32_t i = 0; i < loops; i++) {
+        updateButtons();
+        if (checkPressType(butName) == target) {
+            result = target;
+        }
+    }
+    return result;
 }
 
 /* Unity setup and teardown */
@@ -276,9 +288,17 @@ void test_button_short_down_changes_display_mode(void)
     //Assert
     getDisplayMode_fake.return_val = DISPLAY_SET_GOAL;
     setDisplayMode_fake.arg0_val = DISPLAY_SET_GOAL;
-    press_button(DOWN, PUSHED);
-    press_button(DOWN, RELEASED);
+    GPIOPinRead_fake.arg0_val = DOWN_BUT_PORT_BASE;
+    GPIOPinRead_fake.arg1_val = DOWN_BUT_PIN;
+    GPIOPinRead_fake.return_val = !DOWN_BUT_NORMAL;
+    updateLoop(DOWN, TEST_DURATION * 2, NO_CHANGE);
+
+    GPIOPinRead_fake.return_val = DOWN_BUT_NORMAL;
+    updateLoop(DOWN, TEST_DURATION/2, NO_CHANGE);
+
+    GPIOPinRead_fake.return_val = !DOWN_BUT_NORMAL;
+    updateLoop(DOWN, TEST_DURATION, NO_CHANGE);
+
+
     TEST_ASSERT_EQUAL(DISPLAY_STEPS, setDisplayMode_fake.arg0_val);
-
-
 }

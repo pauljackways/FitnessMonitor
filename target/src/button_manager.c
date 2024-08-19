@@ -35,32 +35,64 @@ static uint16_t longPressCount = 0;
 static bool allowLongPress = true;
 
 
+
 //********************************************************
 // Init buttons and switch I/O handlers
 //********************************************************
+
 void btnInit(void)
 {
     initButtons();
     initSwitch();
 }
 
+// Possible key bindings
 
-//********************************************************
-// Run at a fixed rate, modifies the device's state depending on button presses
-//********************************************************
-void btnUpdateState()
-{
+// Cycle through unit options
+void bindUnits(uint8_t butName, uint8_t butPressType) {
+        // Changing units
+    if (checkPressType(butName) == butPressType) {
+        // Can't use mod, as enums behave like an unsigned int, so (0-1)%n != n-1
+        displayUnits_t currentDisplayUnits = getDisplayUnits();
+        if (currentDisplayUnits > 0) {
+            setDisplayUnits(currentDisplayUnits - 1);
+        } else {
+            setDisplayUnits(UNITS_NUM_TYPES - 1);
+        }
+    }
+}
+
+//Increase steps (debug)
+void bindStepsUp(uint8_t butName, uint8_t butPressType) {
+    if (checkPressType(butName) == butPressType) {
+        setStepsTaken(getStepsTaken() + DEBUG_STEP_INCREMENT);
+    }
+}
+
+//Decrease steps (debug)
+void bindStepsDown(uint8_t butName, uint8_t butPressType) {
+    if (checkPressType(butName) == butPressType) {
+        if (getStepsTaken() >= DEBUG_STEP_DECREMENT) {
+            setStepsTaken(getStepsTaken() - DEBUG_STEP_DECREMENT);
+        } else {
+            setStepsTaken(0);
+        }
+    }
+}
+
+//Cycle forward through displays
+void bindNavUp(uint8_t butName, uint8_t butPressType) {
     displayMode_t currentDisplayMode = getDisplayMode();
-    
-    updateButtons();
-    updateSwitch();
-
-
-    // Changing screens
-    if (checkButton(LEFT) == PUSHED) {
+    if (checkPressType(butName) == butPressType) {
         setDisplayMode((currentDisplayMode + 1) % DISPLAY_NUM_STATES);      //flicker when pressing button
 
-    } else if (checkButton(RIGHT) == PUSHED) {
+    }
+}
+
+//Cycle backward through displays
+void bindNavDown(uint8_t butName, uint8_t butPressType) {
+    displayMode_t currentDisplayMode = getDisplayMode();
+    if (checkPressType(butName) == butPressType) {
         // Can't use mod, as enums behave like an unsigned int, so (0-1)%n != n-1
         if (currentDisplayMode > 0) {
             setDisplayMode(currentDisplayMode - 1);
@@ -68,6 +100,74 @@ void btnUpdateState()
             setDisplayMode(DISPLAY_NUM_STATES - 1);
         }
     }
+}
+
+//Set goal
+void bindSetGoal(uint8_t butName, uint8_t butPressType) {
+    displayMode_t currentDisplayMode = getDisplayMode();
+    if (checkPressType(butName) == butPressType) {
+        setCurrentGoal(getNewGoal());
+        setDisplayMode(DISPLAY_STEPS);
+    }
+}
+
+// RESET
+void bindReset(uint8_t butName, uint8_t butPressType) {
+    displayMode_t currentDisplayMode = getDisplayMode();
+    if (checkPressType(butName) == butPressType) {
+        setStepsTaken(0);
+        flashMessage("Reset!");
+    }
+}
+
+
+
+//Screen options
+void displaySteps(void) {
+    bindUnits(UP, SHORT);
+    bindNavUp(LEFT, SHORT);
+    bindNavDown(RIGHT, SHORT);
+    bindReset(DOWN, DOUBLE);
+
+}
+
+void displayDistance(void) {
+    bindUnits(UP, SHORT);
+    bindNavUp(LEFT, SHORT);
+    bindNavDown(RIGHT, SHORT);
+    bindReset(DOWN, DOUBLE);
+
+}
+
+void displaySetGoal(void) {
+    bindUnits(UP, SHORT);
+    bindNavUp(LEFT, SHORT);
+    bindNavDown(RIGHT, SHORT);
+    bindSetGoal(DOWN, SHORT);
+}
+
+void debugMode(void) {
+    // TEST MODE OPERATION
+    bindNavUp(LEFT, SHORT);
+    bindNavDown(RIGHT, SHORT);
+    bindStepsUp(UP, SHORT);
+    bindStepsDown(DOWN, SHORT);
+}
+
+
+
+
+
+//********************************************************
+// Run at a fixed rate, modifies the device's state depending on button presses
+//********************************************************
+void btnUpdateState()
+{
+    
+    updateButtons();
+    updateSwitch();
+
+    
 
     // Enable/Disable test mode
     if (isSwitchUp()) {
@@ -76,55 +176,24 @@ void btnUpdateState()
         setDebugMode(false);
     }
 
-
     // Usage of UP and DOWN buttons
     if (getDebugMode()) {
-        // TEST MODE OPERATION
-        if (checkButton(UP) == PUSHED) {
-            setStepsTaken(getStepsTaken() + DEBUG_STEP_INCREMENT);
-        }
-
-        if (checkButton(DOWN) == PUSHED) {
-            if (getStepsTaken() >= DEBUG_STEP_DECREMENT) {
-                setStepsTaken(getStepsTaken() - DEBUG_STEP_DECREMENT);
-            } else {
-                setStepsTaken(0);
-            }
-        }
-
+        debugMode();
     } else {
         // NORMAL OPERATION
-
-        // Changing units
-        if (checkButton(UP) == PUSHED) {
-            // Can't use mod, as enums behave like an unsigned int, so (0-1)%n != n-1
-            displayUnits_t currentDisplayUnits = getDisplayUnits();
-            if (currentDisplayUnits > 0) {
-                setDisplayUnits(currentDisplayUnits - 1);
-            } else {
-                setDisplayUnits(UNITS_NUM_TYPES - 1);
-            }
+        switch(getDisplayMode()) {
+            case DISPLAY_STEPS:
+                displaySteps();
+                break;
+            case DISPLAY_DISTANCE:
+                displayDistance();
+                break;
+            case DISPLAY_SET_GOAL:
+                displaySetGoal();
+                break;
+            default:
+                break;
         }
-
-        if (isDown(DOWN) == true) {
-            longPressCount++;
-            if (longPressCount >= LONG_PRESS_CYCLES) {
-                if (allowLongPress && getDisplayMode() != DISPLAY_SET_GOAL) {
-                    setStepsTaken(0);
-                    flashMessage("Reset!");
-                    allowLongPress = false;
-                }
-            }
-        } else {
-            if (longPressCount > 0 && getDisplayMode() == DISPLAY_SET_GOAL) {
-                setCurrentGoal(getNewGoal());
-                setDisplayMode(DISPLAY_STEPS);
-            }
-            longPressCount = 0;
-            allowLongPress = true;
-        }
-
-
     }
 
 }
