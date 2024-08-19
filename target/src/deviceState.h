@@ -4,8 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "circBufV.h"
-#include "../libs/freertos/include/FreeRTOS.h"
-#include <semphr.h>
+
 
 typedef enum {
     DISPLAY_STEPS = 0,

@@ -26,6 +26,8 @@
 #include "stdlib.h"
 #include "OrbitOLED/OrbitOLEDInterface.h"
 #include "utils/ustdlib.h"
+#include "step_counter_main.h"
+
 
 #include "serial_sender.h"
 #include "display_manager.h"

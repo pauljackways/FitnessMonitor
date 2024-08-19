@@ -17,6 +17,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include "circBufV.h"
 #include "deviceState.h"
 #include "inc/hw_memmap.h"
 #include "inc/hw_types.h"
@@ -37,6 +38,7 @@
 #include "ADC_read.h"
 #include "../libs/freertos/include/FreeRTOS.h"
 #include "../libs/freertos/include/task.h"
+
 
 #include "accl_manager.h"
 #include "display_manager.h"

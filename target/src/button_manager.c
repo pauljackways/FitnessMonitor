@@ -19,10 +19,10 @@
 #include "inc/tm4c123gh6pm.h"
 #include "buttons4.h"
 #include "display_manager.h"
+#include "deviceState.h"
 #include "button_manager.h"
+#include "step_counter_main.h"
 #include "switches.h"
-#include "../libs/freertos/include/FreeRTOS.h"
-#include <semphr.h>
 
 
 

@@ -17,14 +17,8 @@
 #define FFF_BUTTONS_FAKES_LIST(FUNC)        \
     FUNC(GPIOPinTypeGPIOInput)           \
     FUNC(GPIOPadConfigSet)            \
-    FUNC(GPIOPinRead) \
-    // FUNC(GPIO_PORTF_LOCK_R) \
-    // FUNC(GPIO_PORTF_CR_R) 
-
-//typedef void (*void_function_ptr_type)(void);
-
-// VALUE_FUNC(uint32_t, GPIO_PORTF_LOCK_R);
-// VALUE_FUNC(uint32_t, GPIO_PORTF_CR_R);
+    FUNC(GPIOPinRead) 
+    
 VOID_FUNC(GPIOPinTypeGPIOInput, uint32_t, uint8_t);
 VOID_FUNC(GPIOPadConfigSet, uint32_t, uint8_t, uint32_t, uint32_t);
 VALUE_FUNC(int32_t, GPIOPinRead, uint32_t, uint8_t);
