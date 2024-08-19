@@ -125,21 +125,6 @@ void btnUpdateState()
         }
 
 
-        // // Resetting steps and updating goal with long and short presses
-        // if ((isDown(DOWN) == true) && (longPressCount >= LONG_PRESS_CYCLES)) {
-        //     setStepsTaken(0);
-        //     flashMessage("Reset!");
-        //     allowLongPress = false;
-        // // } else if ((isDown(DOWN) == true) && (getDisplayMode() != DISPLAY_SET_GOAL) && (longPressCount < LONG_PRESS_CYCLES)){
-        // //     longPressCount++;
-        // // } else if ((isDown(DOWN) == false) && (getDisplayMode() != DISPLAY_SET_GOAL) && (longPressCount < LONG_PRESS_CYCLES) && (longPressCount > 0)) {
-
-        // //     longPressCount = 0;
-        // } else {
-        //     allowLongPress = true;
-        // }
-
-
     }
 
 }
