@@ -12,8 +12,6 @@
 #ifndef DISPLAY_MANAGER_H_
 #define DISPLAY_MANAGER_H_
 
-#include "step_counter_main.h"
-
 typedef enum {
     ALIGN_LEFT = 0,
     ALIGN_CENTRE,

@@ -41,7 +41,7 @@ void initSwitch (void);
 // updateSwitch: Function designed to be called regularly. It polls the switch
 // and updates variables associated with the switch if
 // necessary.
- void updateSwitch (void);
+void updateSwitch (void);
 
 
 // *******************************************************

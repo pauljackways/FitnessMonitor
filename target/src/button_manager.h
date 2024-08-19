@@ -9,7 +9,7 @@
 
 #ifndef BUTTON_MANAGER_H_
 #define BUTTON_MANAGER_H_
-#include "step_counter_main.h"
+//#include "step_counter_main.h"
 
 
 // Init this library
