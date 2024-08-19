@@ -199,6 +199,7 @@ displayUnits_t getDisplayUnits() {
 void setDisplayUnits(displayUnits_t value) {
     xSemaphoreTake(deviceState->displayUnitsMutex, portMAX_DELAY);
     deviceState->displayUnits = value;
+    initButtons();
     xSemaphoreGive(deviceState->displayUnitsMutex);
 }
 

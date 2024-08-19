@@ -33,6 +33,7 @@
 
 static uint16_t longPressCount = 0;
 static bool allowLongPress = true;
+static uint8_t but_press[NUM_BUTS] = {0};
 
 
 
@@ -51,7 +52,7 @@ void btnInit(void)
 // Cycle through unit options
 void bindUnits(uint8_t butName, uint8_t butPressType) {
         // Changing units
-    if (checkPressType(butName) == butPressType) {
+    if (but_press[butName] == butPressType) {
         // Can't use mod, as enums behave like an unsigned int, so (0-1)%n != n-1
         displayUnits_t currentDisplayUnits = getDisplayUnits();
         if (currentDisplayUnits > 0) {
@@ -64,16 +65,17 @@ void bindUnits(uint8_t butName, uint8_t butPressType) {
 
 //Increase steps (debug)
 void bindStepsUp(uint8_t butName, uint8_t butPressType) {
-    if (checkPressType(butName) == butPressType) {
+    if (but_press[butName] == butPressType) {
         setStepsTaken(getStepsTaken() + DEBUG_STEP_INCREMENT);
     }
 }
 
 //Decrease steps (debug)
 void bindStepsDown(uint8_t butName, uint8_t butPressType) {
-    if (checkPressType(butName) == butPressType) {
-        if (getStepsTaken() >= DEBUG_STEP_DECREMENT) {
-            setStepsTaken(getStepsTaken() - DEBUG_STEP_DECREMENT);
+    if (but_press[butName] == butPressType) {
+        uint32_t stepsTaken = getStepsTaken();
+        if (stepsTaken >= DEBUG_STEP_DECREMENT) {
+            setStepsTaken(stepsTaken - DEBUG_STEP_DECREMENT);
         } else {
             setStepsTaken(0);
         }
@@ -83,7 +85,7 @@ void bindStepsDown(uint8_t butName, uint8_t butPressType) {
 //Cycle forward through displays
 void bindNavUp(uint8_t butName, uint8_t butPressType) {
     displayMode_t currentDisplayMode = getDisplayMode();
-    if (checkPressType(butName) == butPressType) {
+    if (but_press[butName] == butPressType) {
         setDisplayMode((currentDisplayMode + 1) % DISPLAY_NUM_STATES);      //flicker when pressing button
 
     }
@@ -92,7 +94,7 @@ void bindNavUp(uint8_t butName, uint8_t butPressType) {
 //Cycle backward through displays
 void bindNavDown(uint8_t butName, uint8_t butPressType) {
     displayMode_t currentDisplayMode = getDisplayMode();
-    if (checkPressType(butName) == butPressType) {
+    if (but_press[butName] == butPressType) {
         // Can't use mod, as enums behave like an unsigned int, so (0-1)%n != n-1
         if (currentDisplayMode > 0) {
             setDisplayMode(currentDisplayMode - 1);
@@ -104,17 +106,14 @@ void bindNavDown(uint8_t butName, uint8_t butPressType) {
 
 //Set goal
 void bindSetGoal(uint8_t butName, uint8_t butPressType) {
-    displayMode_t currentDisplayMode = getDisplayMode();
-    if (checkPressType(butName) == butPressType) {
+    if (but_press[butName] == butPressType) {
         setCurrentGoal(getNewGoal());
-        setDisplayMode(DISPLAY_STEPS);
     }
 }
 
 // RESET
 void bindReset(uint8_t butName, uint8_t butPressType) {
-    displayMode_t currentDisplayMode = getDisplayMode();
-    if (checkPressType(butName) == butPressType) {
+    if (but_press[butName] == butPressType) {
         setStepsTaken(0);
         flashMessage("Reset!");
     }
@@ -136,7 +135,6 @@ void displayDistance(void) {
     bindNavUp(LEFT, SHORT);
     bindNavDown(RIGHT, SHORT);
     bindReset(DOWN, DOUBLE);
-
 }
 
 void displaySetGoal(void) {
@@ -144,6 +142,7 @@ void displaySetGoal(void) {
     bindNavUp(LEFT, SHORT);
     bindNavDown(RIGHT, SHORT);
     bindSetGoal(DOWN, SHORT);
+    bindReset(DOWN, LONG);
 }
 
 void debugMode(void) {
@@ -151,6 +150,8 @@ void debugMode(void) {
     bindNavUp(LEFT, SHORT);
     bindNavDown(RIGHT, SHORT);
     bindStepsUp(UP, SHORT);
+    bindSetGoal(DOWN, DOUBLE);
+    bindReset(DOWN, LONG);
     bindStepsDown(DOWN, SHORT);
 }
 
@@ -163,11 +164,11 @@ void debugMode(void) {
 //********************************************************
 void btnUpdateState()
 {
-    
-    updateButtons();
     updateSwitch();
 
-    
+    for (uint8_t i=0; i< NUM_BUTS; i++) {
+        but_press[i] = checkPressType(i);
+    }
 
     // Enable/Disable test mode
     if (isSwitchUp()) {

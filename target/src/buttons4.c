@@ -33,6 +33,7 @@ static bool but_state[NUM_BUTS];	// Corresponds to the electrical state
 static uint8_t but_count[NUM_BUTS];
 static bool but_flag[NUM_BUTS];
 static bool but_normal[NUM_BUTS];   // Corresponds to the electrical state
+
 static uint8_t press_count[NUM_BUTS];
 static uint8_t unpress_count[NUM_BUTS];
 static uint8_t test_count[NUM_BUTS];
@@ -138,9 +139,18 @@ updateButtons (void)
 	}
 }
 
+void resetButton(uint8_t butName) {
+    press_count[butName] = 0;
+    unpress_count[butName] = 0;
+    test_count[butName] = 0;
+    already_pressed[butName] = false;
+    prevent_long[butName] = false;
+}
+
 
 ButtonPressType checkPressType(uint8_t butName) // Returns button press state on state change
 {
+    updateButtons();
     //ButtonPressType pressType = NO_CHANGE; // Initialised instead of just returned so as to avoid concurrency issues
     if (but_flag[butName] == true) {
         but_flag[butName] = false;
@@ -149,9 +159,7 @@ ButtonPressType checkPressType(uint8_t butName) // Returns button press state on
             press_count[butName] = 0;
             test_count[butName] = 0;
             if (unpress_count[butName] > 0 && unpress_count[butName] < TEST_DURATION) {
-                press_count[butName] = 0;
-                unpress_count[butName] = 0;
-                test_count[butName] = 0;
+                resetButton(butName);
                 return DOUBLE;
             }
         } else {
@@ -163,19 +171,14 @@ ButtonPressType checkPressType(uint8_t butName) // Returns button press state on
             test_count[butName]++;
             press_count[butName]++;
             if (press_count[butName] > TEST_DURATION * 4) {
-                press_count[butName] = 0;
-                unpress_count[butName] = 0;
-                test_count[butName] = 0;
-                prevent_long[butName] = true;
+                resetButton(butName);
                 return LONG;
             }
         } else {
             test_count[butName]++;
             unpress_count[butName]++;
             if (test_count[butName] > TEST_DURATION && unpress_count[butName] > 0 && unpress_count[butName] < TEST_DURATION && press_count[butName] > 0 && press_count[butName] < TEST_DURATION) {
-                press_count[butName] = 0;
-                unpress_count[butName] = 0;
-                test_count[butName] = 0;
+                resetButton(butName);
                 return SHORT;
             }
             if (unpress_count[butName] > TEST_DURATION * 8) {
