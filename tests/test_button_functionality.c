@@ -14,6 +14,8 @@
 DEFINE_FFF_GLOBALS;
 #define FFF_MOCK_IMPL // Includes mock implementations
 
+#define LONG_PRESS_CYCLES 20
+
 #include "tiva_mocks/gpio_mock.h"
 #include "tiva_mocks/sysctl_mock.h"
 //#include "tiva_mocks/buttons4_mock.h"
@@ -45,6 +47,17 @@ displayMode_t getDisplayMode_callback(void) {
 
 void setDisplayMode_callback(displayMode_t mode) {
     current_display_mode = mode;
+}
+
+//For keeping track of units
+static displayMode_t current_display_units = 0;
+
+displayUnits_t getDisplayUnits_callback(void) {
+    return current_display_units;
+}
+
+void setDisplayUnits_callback(displayUnits_t mode) {
+    current_display_units = mode;
 }
 
 //Presses or releases button
@@ -115,6 +128,8 @@ void setUp(void)
     getFlashMessage_fake.return_val = NULL;
     getDisplayMode_fake.custom_fake = getDisplayMode_callback;
     setDisplayMode_fake.custom_fake = setDisplayMode_callback;
+    getDisplayUnits_fake.custom_fake = getDisplayUnits_callback;
+    setDisplayUnits_fake.custom_fake = setDisplayUnits_callback;
 }
 
 void tearDown(void)
@@ -162,3 +177,87 @@ void test_button_num_states_back_to_start(void)
     TEST_ASSERT_EQUAL(0, setDisplayMode_fake.arg0_val);
 }
 
+void test_button_long_down_resets(void)
+{
+    //Arrange
+    getStepsTaken_fake.return_val = 100;
+    getDebugMode_fake.return_val = false;
+    getDisplayMode_fake.return_val = 0;
+
+    // Act
+    for (uint8_t i = 0; i < LONG_PRESS_CYCLES + 1; i++) {
+        press_button(DOWN, PUSHED);
+    }
+
+    // Assert
+    TEST_ASSERT_EQUAL(0, setStepsTaken_fake.arg0_val);
+}
+
+void test_button_debug_up_increments_all_states(void)
+{
+    //Arrange
+    getDebugMode_fake.return_val = true;
+
+    //Act
+    //Assert
+    for (uint8_t i = 0; i < DISPLAY_NUM_STATES; i++) {
+        getStepsTaken_fake.return_val = 100;
+        getDisplayMode_fake.return_val = i;
+        press_button(UP, PUSHED);
+        press_button(UP, RELEASED);
+        TEST_ASSERT_EQUAL(100 + DEBUG_STEP_INCREMENT, setStepsTaken_fake.arg0_val);
+    }
+
+}
+
+void test_button_debug_down_decrements_all_states(void)
+{
+    //Arrange
+    getDebugMode_fake.return_val = true;
+
+    //Act
+    //Assert
+    for (uint8_t i = 0; i < DISPLAY_NUM_STATES; i++) {
+        getStepsTaken_fake.return_val = 1000;
+        getDisplayMode_fake.return_val = i;
+        press_button(DOWN, PUSHED);
+        press_button(DOWN, RELEASED);
+        TEST_ASSERT_EQUAL(1000 - DEBUG_STEP_DECREMENT, setStepsTaken_fake.arg0_val);
+    }
+
+}
+
+void test_button_debug_down_decrement_stops_at_zero(void)
+{
+    //Arrange
+    getDebugMode_fake.return_val = true;
+
+    //Act
+    //Assert
+    for (uint8_t i = 0; i < DISPLAY_NUM_STATES; i++) {
+        getStepsTaken_fake.return_val = DEBUG_STEP_DECREMENT - 1;
+        getDisplayMode_fake.return_val = i;
+        press_button(DOWN, PUSHED);
+        press_button(DOWN, RELEASED);
+        TEST_ASSERT_EQUAL(0, setStepsTaken_fake.arg0_val);
+    }
+
+}
+
+void test_button_up_changes_units_all_states(void)
+{
+    //Arrange
+    getDebugMode_fake.return_val = false;
+    //Act
+    //Assert
+    for (uint8_t i = 0; i < DISPLAY_NUM_STATES; i++) {
+        getDisplayUnits_fake.return_val = UNITS_NUM_TYPES;
+        for (uint8_t j = UNITS_NUM_TYPES-1; j <0 ; j--) {
+            getDisplayMode_fake.return_val = i;
+            press_button(UP, PUSHED);
+            press_button(UP, RELEASED);
+            TEST_ASSERT_EQUAL(j, setDisplayUnits_fake.arg0_val);
+        }
+    }
+
+}

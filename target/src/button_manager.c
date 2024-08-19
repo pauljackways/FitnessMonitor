@@ -97,12 +97,15 @@ void btnUpdateState()
 
         // Changing units
         if (checkButton(UP) == PUSHED) {
-            if (getDisplayUnits() == UNITS_SI) {
-                setDisplayUnits(UNITS_ALTERNATE);
+            // Can't use mod, as enums behave like an unsigned int, so (0-1)%n != n-1
+            displayUnits_t currentDisplayUnits = getDisplayUnits();
+            if (currentDisplayUnits > 0) {
+                setDisplayUnits(currentDisplayUnits - 1);
             } else {
-                setDisplayUnits(UNITS_SI);
+                setDisplayUnits(UNITS_NUM_TYPES - 1);
             }
         }
+
 
         // Resetting steps and updating goal with long and short presses
         if ((isDown(DOWN) == true) && (getDisplayMode() != DISPLAY_SET_GOAL) && (allowLongPress)) {
