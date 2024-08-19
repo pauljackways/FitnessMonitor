@@ -75,7 +75,6 @@ void press_button(uint8_t butName, uint8_t butState) {
         case DOWN:
             GPIOPinRead_fake.arg0_val = DOWN_BUT_PORT_BASE;
             GPIOPinRead_fake.arg1_val = DOWN_BUT_PIN;
-            GPIOPinRead_fake.return_val = DOWN_BUT_PIN;
             if (butState == PUSHED) {
                 GPIOPinRead_fake.return_val = DOWN_BUT_PIN;
             } else {
@@ -85,7 +84,6 @@ void press_button(uint8_t butName, uint8_t butState) {
         case LEFT:
             GPIOPinRead_fake.arg0_val = LEFT_BUT_PORT_BASE;
             GPIOPinRead_fake.arg1_val = LEFT_BUT_PIN;
-            GPIOPinRead_fake.return_val = LEFT_BUT_PIN;
             if (butState == PUSHED) {
                 GPIOPinRead_fake.return_val = LEFT_BUT_PIN;
             } else {
@@ -95,7 +93,6 @@ void press_button(uint8_t butName, uint8_t butState) {
         case RIGHT:
             GPIOPinRead_fake.arg0_val = RIGHT_BUT_PORT_BASE;
             GPIOPinRead_fake.arg1_val = RIGHT_BUT_PIN;
-            GPIOPinRead_fake.return_val = RIGHT_BUT_PIN;
             if (butState == PUSHED) {
                 GPIOPinRead_fake.return_val = RIGHT_BUT_PIN;
             } else {
@@ -106,7 +103,7 @@ void press_button(uint8_t butName, uint8_t butState) {
             return;
     }
     //To get past debouncing
-    for (volatile int32_t i = 0; i < 10; i++) {
+    for (volatile int32_t i = 0; i < LONG_PRESS_CYCLES-1; i++) {
         btnUpdateState();
     }
 }
@@ -179,17 +176,22 @@ void test_button_num_states_back_to_start(void)
 
 void test_button_long_down_resets(void)
 {
+
     //Arrange
+    setStepsTaken_fake.arg0_val = 100;
     getStepsTaken_fake.return_val = 100;
     getDebugMode_fake.return_val = false;
     getDisplayMode_fake.return_val = 0;
 
     // Act
-    for (uint8_t i = 0; i < LONG_PRESS_CYCLES + 1; i++) {
+    for (uint8_t i = 0; i < 2; i++) {
         press_button(DOWN, PUSHED);
     }
+    press_button(DOWN, RELEASED);
+
 
     // Assert
+    TEST_ASSERT_EQUAL(1, flashMessage_fake.call_count);
     TEST_ASSERT_EQUAL(0, setStepsTaken_fake.arg0_val);
 }
 
@@ -259,5 +261,24 @@ void test_button_up_changes_units_all_states(void)
             TEST_ASSERT_EQUAL(j, setDisplayUnits_fake.arg0_val);
         }
     }
+
+}
+
+
+void test_button_short_down_changes_display_mode(void)
+{
+    // No idea at all why this test wouldn't be working. 
+    
+    //Arrange
+    getDebugMode_fake.return_val = false;
+    getNewGoal_fake.return_val = 1234;
+    //Act
+    //Assert
+    getDisplayMode_fake.return_val = DISPLAY_SET_GOAL;
+    setDisplayMode_fake.arg0_val = DISPLAY_SET_GOAL;
+    press_button(DOWN, PUSHED);
+    press_button(DOWN, RELEASED);
+    TEST_ASSERT_EQUAL(DISPLAY_STEPS, setDisplayMode_fake.arg0_val);
+
 
 }

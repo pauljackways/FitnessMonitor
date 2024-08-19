@@ -106,28 +106,38 @@ void btnUpdateState()
             }
         }
 
-
-        // Resetting steps and updating goal with long and short presses
-        if ((isDown(DOWN) == true) && (getDisplayMode() != DISPLAY_SET_GOAL) && (allowLongPress)) {
+        if (isDown(DOWN) == true) {
             longPressCount++;
             if (longPressCount >= LONG_PRESS_CYCLES) {
-                setStepsTaken(0);
-                flashMessage("Reset!");
+                if (allowLongPress && getDisplayMode() != DISPLAY_SET_GOAL) {
+                    setStepsTaken(0);
+                    flashMessage("Reset!");
+                    allowLongPress = false;
+                }
             }
         } else {
-            if ((currentDisplayMode == DISPLAY_SET_GOAL) && checkButton(DOWN) == PUSHED) {
-                // TODO: Make direct call to setGoal from here?
+            if (longPressCount > 0 && getDisplayMode() == DISPLAY_SET_GOAL) {
                 setCurrentGoal(getNewGoal());
                 setDisplayMode(DISPLAY_STEPS);
-
-                allowLongPress = false; // Hacky solution: Protection against double-registering as a short press then a long press
             }
             longPressCount = 0;
-        }
-
-        if (checkButton(DOWN) == RELEASED) {
             allowLongPress = true;
         }
+
+
+        // // Resetting steps and updating goal with long and short presses
+        // if ((isDown(DOWN) == true) && (longPressCount >= LONG_PRESS_CYCLES)) {
+        //     setStepsTaken(0);
+        //     flashMessage("Reset!");
+        //     allowLongPress = false;
+        // // } else if ((isDown(DOWN) == true) && (getDisplayMode() != DISPLAY_SET_GOAL) && (longPressCount < LONG_PRESS_CYCLES)){
+        // //     longPressCount++;
+        // // } else if ((isDown(DOWN) == false) && (getDisplayMode() != DISPLAY_SET_GOAL) && (longPressCount < LONG_PRESS_CYCLES) && (longPressCount > 0)) {
+
+        // //     longPressCount = 0;
+        // } else {
+        //     allowLongPress = true;
+        // }
 
 
     }

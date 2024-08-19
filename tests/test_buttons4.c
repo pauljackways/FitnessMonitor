@@ -44,7 +44,9 @@ void press_button(uint8_t butName) {
             GPIOPinRead_fake.return_val = RIGHT_BUT_PIN;
             break;
         default:
-            return;
+            GPIOPinRead_fake.arg0_val = DOWN_BUT_PORT_BASE;
+            GPIOPinRead_fake.arg1_val = DOWN_BUT_PIN;
+            GPIOPinRead_fake.return_val = 0;
     }
     //To get past debouncing
     for (volatile int32_t i = 0; i < 10; i++) {
@@ -133,3 +135,14 @@ void test_buttons4_debouncing(void)
     TEST_ASSERT_EQUAL(NO_CHANGE, result);
 }
 
+void test_buttons4_isDown_true(void) {
+
+    press_button(DOWN);
+    TEST_ASSERT_EQUAL(true, isDown(DOWN));
+}
+
+void test_buttons4_isDown_false(void) {
+    press_button(DOWN);
+    press_button(-1);
+    TEST_ASSERT_EQUAL(false, isDown(DOWN));
+}
