@@ -97,32 +97,30 @@ void btnUpdateState()
 
         // Changing units
         if (checkButton(UP) == PUSHED) {
-            if (getDisplayUnits() == UNITS_SI) {
-                setDisplayUnits(UNITS_ALTERNATE);
+            // Can't use mod, as enums behave like an unsigned int, so (0-1)%n != n-1
+            displayUnits_t currentDisplayUnits = getDisplayUnits();
+            if (currentDisplayUnits > 0) {
+                setDisplayUnits(currentDisplayUnits - 1);
             } else {
-                setDisplayUnits(UNITS_SI);
+                setDisplayUnits(UNITS_NUM_TYPES - 1);
             }
         }
 
-        // Resetting steps and updating goal with long and short presses
-        if ((isDown(DOWN) == true) && (getDisplayMode() != DISPLAY_SET_GOAL) && (allowLongPress)) {
+        if (isDown(DOWN) == true) {
             longPressCount++;
             if (longPressCount >= LONG_PRESS_CYCLES) {
-                setStepsTaken(0);
-                flashMessage("Reset!");
+                if (allowLongPress && getDisplayMode() != DISPLAY_SET_GOAL) {
+                    setStepsTaken(0);
+                    flashMessage("Reset!");
+                    allowLongPress = false;
+                }
             }
         } else {
-            if ((currentDisplayMode == DISPLAY_SET_GOAL) && checkButton(DOWN) == PUSHED) {
-                // TODO: Make direct call to setGoal from here?
+            if (longPressCount > 0 && getDisplayMode() == DISPLAY_SET_GOAL) {
                 setCurrentGoal(getNewGoal());
                 setDisplayMode(DISPLAY_STEPS);
-
-                allowLongPress = false; // Hacky solution: Protection against double-registering as a short press then a long press
             }
             longPressCount = 0;
-        }
-
-        if (checkButton(DOWN) == RELEASED) {
             allowLongPress = true;
         }
 

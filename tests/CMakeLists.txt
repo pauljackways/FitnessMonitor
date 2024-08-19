@@ -19,7 +19,7 @@ target_include_directories(test_adc PRIVATE ${SRC_DIR} ${MOCK_DIR} ${TIVAWARE_DI
 add_unity_test(test_adc_hal test_adc_hal.c ${SRC_DIR}/adc_hal_tiva.c)
 target_include_directories(test_adc_hal PRIVATE ${SRC_DIR} ${MOCK_DIR} ${TIVAWARE_DIR})
 
-add_unity_test(test_button_functionality test_button_functionality.c ${SRC_DIR}/button_manager.c ${FREERTOS_CONFIG})
+add_unity_test(test_button_functionality test_button_functionality.c ${SRC_DIR}/button_manager.c ${SRC_DIR}/buttons4.c ${FREERTOS_CONFIG})
 target_include_directories(test_button_functionality PRIVATE ${SRC_DIR} ${MOCK_DIR} ${TIVAWARE_DIR})
 
 add_unity_test(test_buttons4 test_buttons4.c ${SRC_DIR}/buttons4.c)

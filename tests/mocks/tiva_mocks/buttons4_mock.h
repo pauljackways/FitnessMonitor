@@ -9,7 +9,7 @@
     #define VALUE_FUNC DECLARE_FAKE_VALUE_FUNC
 #endif
 
-#define FFF_BUTTONS_FAKES_LIST(FUNC) \
+#define FFF_BUTTONS4_FAKES_LIST(FUNC) \
     FUNC(initButtons)               \
     FUNC(updateButtons)             \
     FUNC(checkButton)               \
