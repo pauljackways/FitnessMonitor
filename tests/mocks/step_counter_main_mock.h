@@ -9,7 +9,7 @@
     #define VALUE_FUNC DECLARE_FAKE_VALUE_FUNC
 #endif
 
-#define FFF_DISPLAY_MANAGER_FAKES_LIST(FUNC) \
+#define FFF_STEP_COUNTER_MAIN_FAKES_LIST(FUNC) \
     FUNC(flashMessage)                      
 
 VOID_FUNC(flashMessage, char*);

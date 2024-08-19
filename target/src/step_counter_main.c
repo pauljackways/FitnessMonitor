@@ -10,7 +10,7 @@
  */
 
 // Comment this out to disable serial plotting
-// #define SERIAL_PLOTTING_ENABLED
+// #define SERIAL_PLOTTING_ENABLED 
 
 
 #include <stdint.h>
