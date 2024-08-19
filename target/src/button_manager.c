@@ -31,8 +31,6 @@
 //********************************************************
 #define LONG_PRESS_CYCLES 20
 
-static uint16_t longPressCount = 0;
-static bool allowLongPress = true;
 static uint8_t but_press[NUM_BUTS] = {0};
 
 
