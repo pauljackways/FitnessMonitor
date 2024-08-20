@@ -144,14 +144,15 @@ void displaySetGoal(void) {
 }
 
 void debugMode(void) {
-    // TEST MODE OPERATION
-    bindNavUp(LEFT, SHORT);
-    bindNavDown(RIGHT, SHORT);
-    bindStepsUp(UP, SHORT);
-    bindSetGoal(DOWN, DOUBLE);
-    bindReset(DOWN, LONG);
-    bindStepsDown(DOWN, SHORT);
+   // TEST MODE OPERATION
+   bindNavUp(LEFT, SHORT);
+   bindNavDown(RIGHT, SHORT);
+   bindStepsUp(UP, LONG);
+   bindSetGoal(UP, DOUBLE);
+   bindReset(DOWN, LONG);
+   bindStepsDown(DOWN, SHORT);
 }
+
 
 
 
