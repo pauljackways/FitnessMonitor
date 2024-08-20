@@ -40,6 +40,8 @@ static uint8_t test_count[NUM_BUTS];
 static uint8_t but_count[NUM_BUTS];
 static bool already_pressed[NUM_BUTS];
 static bool prevent_long[NUM_BUTS];
+static bool prevent_short[NUM_BUTS];
+
 
 
 // Function which returns current button state. Abstracts GPIO function calls for other modules
@@ -145,6 +147,7 @@ void resetButton(uint8_t butName) {
     test_count[butName] = 0;
     already_pressed[butName] = false;
     prevent_long[butName] = false;
+    initButtons();
 }
 
 
@@ -160,9 +163,11 @@ ButtonPressType checkPressType(uint8_t butName) // Returns button press state on
             test_count[butName] = 0;
             if (unpress_count[butName] > 0 && unpress_count[butName] < TEST_DURATION) {
                 resetButton(butName);
+                prevent_short[butName] = true;
                 return DOUBLE;
             }
         } else {
+            prevent_short[butName] = false;
             unpress_count[butName] = 0;
         }
         return NO_CHANGE;
@@ -177,7 +182,12 @@ ButtonPressType checkPressType(uint8_t butName) // Returns button press state on
         } else {
             test_count[butName]++;
             unpress_count[butName]++;
-            if (test_count[butName] > TEST_DURATION && unpress_count[butName] > 0 && unpress_count[butName] < TEST_DURATION && press_count[butName] > 0 && press_count[butName] < TEST_DURATION) {
+            if (test_count[butName] < TEST_DURATION) {
+                prevent_short[butName] = true;
+            } else {
+                prevent_short[butName] = false; 
+            }      
+            if (!prevent_short[butName] && test_count[butName] > TEST_DURATION && unpress_count[butName] > 0 && unpress_count[butName] < TEST_DURATION && press_count[butName] > 0 && press_count[butName] < TEST_DURATION) {
                 resetButton(butName);
                 return SHORT;
             }
