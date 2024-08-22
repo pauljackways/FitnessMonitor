@@ -117,6 +117,7 @@ void flashMessage(char* toShow)
 
 }
 
+// Set newGoal value based on reading ADC buffer
 void setGoal() {
     uint32_t newGoal = ((readADC() * POT_SCALE_COEFF) / STEP_GOAL_ROUNDING) * STEP_GOAL_ROUNDING;
     if (newGoal == 0) { // Prevent a goal of zero, instead setting to the minimum goal (this also makes it easier to test the goal-reaching code on a small but non-zero target)
@@ -126,8 +127,8 @@ void setGoal() {
 
 }
 
-void stepCheck() {
-    
+// Check to see if a step has been taken
+void stepCheck() { 
     bool stepHigh = getStepHigh();
     vector3_t mean = getMean();
     uint16_t combined = sqrt(mean.x*mean.x + mean.y*mean.y + mean.z*mean.z);
@@ -152,6 +153,7 @@ void stepCheck() {
 
 }
 
+// Button poll and handle
 void vTaskButtons(void* pvParameters) {
     const TickType_t xDelay = pdMS_TO_TICKS(1000/RATE_IO_HZ); 
 
@@ -163,8 +165,9 @@ void vTaskButtons(void* pvParameters) {
     }
 }
 
+// Set newGoal based on ADC
 void vTaskGoal(void* pvParameters) {
-    const TickType_t xDelay = pdMS_TO_TICKS(RATE_ADC_HZ); 
+    const TickType_t xDelay = pdMS_TO_TICKS(1000/RATE_ADC_HZ); 
 
     for (;;) 
     {
@@ -175,6 +178,7 @@ void vTaskGoal(void* pvParameters) {
     }
 }
 
+// Update accelerometer data and check for step
 void vTaskPedometer(void* pvParameters) {
     const TickType_t xDelay = pdMS_TO_TICKS(1000/RATE_ACCL_HZ); 
 
@@ -190,6 +194,7 @@ void vTaskPedometer(void* pvParameters) {
     }
 }
 
+// Display 
 void vTaskDisplay(void* pvParameters)
 {
     const TickType_t xDelay = pdMS_TO_TICKS(1000/RATE_DISPLAY_HZ); 

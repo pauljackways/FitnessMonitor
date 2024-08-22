@@ -26,6 +26,7 @@
 #include "buttons4.h"
 
 
+
 // *******************************************************
 // Globals to module
 // *******************************************************
@@ -34,13 +35,13 @@ static uint8_t but_count[NUM_BUTS];
 static bool but_flag[NUM_BUTS];
 static bool but_normal[NUM_BUTS];   // Corresponds to the electrical state
 
-static uint8_t press_count[NUM_BUTS];
-static uint8_t unpress_count[NUM_BUTS];
-static uint8_t test_count[NUM_BUTS];
-static uint8_t but_count[NUM_BUTS];
-static bool already_pressed[NUM_BUTS];
-static bool prevent_long[NUM_BUTS];
-static bool prevent_short[NUM_BUTS];
+static uint8_t press_count[NUM_BUTS]; // Count cycles pressed
+static uint8_t unpress_count[NUM_BUTS]; // Count cycles unpressed
+static uint8_t test_count[NUM_BUTS]; // Count cycles of test
+static uint8_t but_count[NUM_BUTS]; // For debouncing
+static bool already_pressed[NUM_BUTS]; // For Double press detection
+static bool prevent_long[NUM_BUTS]; // Prevent long press recording after long press time
+static bool prevent_short[NUM_BUTS]; // Prevent short press recording after double
 
 
 
@@ -141,23 +142,20 @@ updateButtons (void)
 	}
 }
 
+// For use after a button press is registered to reset tests
 void resetButton(uint8_t butName) {
     press_count[butName] = 0;
     unpress_count[butName] = 0;
     test_count[butName] = 0;
     already_pressed[butName] = false;
-    prevent_long[butName] = false;
-    initButtons();
 }
 
-
+// Returns the type of button press recorded - each button is to be polled separately. 
 ButtonPressType checkPressType(uint8_t butName) // Returns button press state on state change
 {
     updateButtons();
-    //ButtonPressType pressType = NO_CHANGE; // Initialised instead of just returned so as to avoid concurrency issues
     if (but_flag[butName] == true) {
         but_flag[butName] = false;
-        prevent_long[butName] = false;
         if (!isUnpressed(butName)) { 
             press_count[butName] = 0;
             test_count[butName] = 0;
@@ -168,6 +166,7 @@ ButtonPressType checkPressType(uint8_t butName) // Returns button press state on
             }
         } else {
             prevent_short[butName] = false;
+            prevent_long[butName] = false;
             unpress_count[butName] = 0;
         }
         return NO_CHANGE;
@@ -177,6 +176,8 @@ ButtonPressType checkPressType(uint8_t butName) // Returns button press state on
             press_count[butName]++;
             if (press_count[butName] > TEST_DURATION * 4) {
                 resetButton(butName);
+                prevent_long[butName] = true;
+                prevent_short[butName] = true;
                 return LONG;
             }
         } else {

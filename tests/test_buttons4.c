@@ -14,6 +14,7 @@ DEFINE_FFF_GLOBALS;
 #include "tiva_mocks/gpio_mock.h"
 #include "tiva_mocks/sysctl_mock.h"
 
+ButtonPressType dummy = NO_CHANGE;
 
 /* Helper functions */      
 void reset_fff(void)
@@ -23,15 +24,65 @@ void reset_fff(void)
     FFF_RESET_HISTORY();
 }
 
+// Checks if the state changes and returns the most recent change of button press type
 ButtonPressType updateLoop(uint32_t loops, ButtonPressType target){
+    ButtonPressType test = NO_CHANGE;
     ButtonPressType result = NO_CHANGE;
     for (volatile uint32_t i = 0; i < loops; i++) {
-        updateButtons();
-        if (checkPressType(DEFAULT_BUT) == target) {
-            result = target;
+        test = checkPressType(DEFAULT_BUT);
+        if (test != NO_CHANGE) {
+            result = test;
         }
     }
     return result;
+}
+
+//Presses or releases button - alternative function if updateloop istn working
+void press_button(uint8_t butName, uint8_t butState) {
+    switch(butName) {
+        case UP:
+            GPIOPinRead_fake.arg0_val = UP_BUT_PORT_BASE;
+            GPIOPinRead_fake.arg1_val = UP_BUT_PIN;
+            if (butState == PUSHED) {
+                GPIOPinRead_fake.return_val = UP_BUT_PIN;
+            } else {
+                GPIOPinRead_fake.return_val = 0;
+            }
+            break;
+        case DOWN:
+            GPIOPinRead_fake.arg0_val = DOWN_BUT_PORT_BASE;
+            GPIOPinRead_fake.arg1_val = DOWN_BUT_PIN;
+            if (butState == PUSHED) {
+                GPIOPinRead_fake.return_val = DOWN_BUT_PIN;
+            } else {
+                GPIOPinRead_fake.return_val = 0;
+            }
+            break;
+        case LEFT:
+            GPIOPinRead_fake.arg0_val = LEFT_BUT_PORT_BASE;
+            GPIOPinRead_fake.arg1_val = LEFT_BUT_PIN;
+            if (butState == PUSHED) {
+                GPIOPinRead_fake.return_val = LEFT_BUT_PIN;
+            } else {
+                GPIOPinRead_fake.return_val = 0;
+            }
+            break;
+        case RIGHT:
+            GPIOPinRead_fake.arg0_val = RIGHT_BUT_PORT_BASE;
+            GPIOPinRead_fake.arg1_val = RIGHT_BUT_PIN;
+            if (butState == PUSHED) {
+                GPIOPinRead_fake.return_val = RIGHT_BUT_PIN;
+            } else {
+                GPIOPinRead_fake.return_val = 0;
+            }
+            break;
+        default:
+            return;
+    }
+    ButtonPressType result = NO_CHANGE;
+    for (volatile int32_t i = 0; i < TEST_DURATION; i++) {
+        result = updateLoop(1, NO_CHANGE);
+    }
 }
 
 /* Unity setup and teardown */
@@ -41,80 +92,12 @@ void setUp(void)
     if (!isUnpressed(UP)) {
         GPIOPinRead_fake.return_val = !GPIOPinRead_fake.return_val;
     }
-    updateLoop(TEST_DURATION*3, NO_CHANGE);
+    dummy = updateLoop(TEST_DURATION*3, NO_CHANGE);
 }
 
 void tearDown(void)
 {
     
-}
-
-void test_buttons4_initialises_up(void)
-{
-    //Arrange
-    GPIOPinRead_fake.arg0_val = UP_BUT_PORT_BASE;
-    GPIOPinRead_fake.arg1_val = UP_BUT_PIN;
-    GPIOPinRead_fake.return_val = UP_BUT_PIN;
-
-    //Act/Assert
-    updateLoop(TEST_DURATION, NO_CHANGE);
-
-    // Act
-    uint8_t result = isUnpressed(UP);
-
-    // Assert
-    TEST_ASSERT_EQUAL(false, result);
-}
-
-void test_buttons4_initialises_down(void)
-{
-    //Arrange
-    GPIOPinRead_fake.arg0_val = DOWN_BUT_PORT_BASE;
-    GPIOPinRead_fake.arg1_val = DOWN_BUT_PIN;
-    GPIOPinRead_fake.return_val = DOWN_BUT_PIN;
-
-    //Act/Assert
-    updateLoop(TEST_DURATION, NO_CHANGE);
-
-    // Act
-    uint8_t result = isUnpressed(DOWN);
-
-    // Assert
-    TEST_ASSERT_EQUAL(false, result);
-}
-
-void test_buttons4_initialises_left(void)
-{
-    //Arrange
-    GPIOPinRead_fake.arg0_val = LEFT_BUT_PORT_BASE;
-    GPIOPinRead_fake.arg1_val = LEFT_BUT_PIN;
-    GPIOPinRead_fake.return_val = LEFT_BUT_PIN;
-
-    //Act/Assert
-    updateLoop(TEST_DURATION, NO_CHANGE);
-
-    // Act
-    uint8_t result = isUnpressed(LEFT);
-
-    // Assert
-    TEST_ASSERT_EQUAL(false, result);
-}
-
-void test_buttons4_initialises_right(void)
-{
-    //Arrange
-    GPIOPinRead_fake.arg0_val = RIGHT_BUT_PORT_BASE;
-    GPIOPinRead_fake.arg1_val = RIGHT_BUT_PIN;
-    GPIOPinRead_fake.return_val = RIGHT_BUT_PIN;
-
-    //Act/Assert
-    updateLoop(TEST_DURATION, NO_CHANGE);
-
-    // Act
-    uint8_t result = isUnpressed(RIGHT);
-
-    // Assert
-    TEST_ASSERT_EQUAL(false, result);
 }
 
 void test_buttons4_debouncing(void)
@@ -134,6 +117,74 @@ void test_buttons4_debouncing(void)
     TEST_ASSERT_EQUAL(true, result);
 }
 
+void test_buttons4_initialises_up(void)
+{
+    //Arrange
+    GPIOPinRead_fake.arg0_val = UP_BUT_PORT_BASE;
+    GPIOPinRead_fake.arg1_val = UP_BUT_PIN;
+    GPIOPinRead_fake.return_val = UP_BUT_PIN;
+
+    //Act/Assert
+    dummy = updateLoop(TEST_DURATION, NO_CHANGE);
+
+    // Act
+    uint8_t result = isUnpressed(UP);
+
+    // Assert
+    TEST_ASSERT_EQUAL(false, result);
+}
+
+void test_buttons4_initialises_down(void)
+{
+    //Arrange
+    GPIOPinRead_fake.arg0_val = DOWN_BUT_PORT_BASE;
+    GPIOPinRead_fake.arg1_val = DOWN_BUT_PIN;
+    GPIOPinRead_fake.return_val = DOWN_BUT_PIN;
+
+    //Act/Assert
+    dummy = updateLoop(TEST_DURATION, NO_CHANGE);
+
+    // Act
+    uint8_t result = isUnpressed(DOWN);
+
+    // Assert
+    TEST_ASSERT_EQUAL(false, result);
+}
+
+void test_buttons4_initialises_left(void)
+{
+    //Arrange
+    GPIOPinRead_fake.arg0_val = LEFT_BUT_PORT_BASE;
+    GPIOPinRead_fake.arg1_val = LEFT_BUT_PIN;
+    GPIOPinRead_fake.return_val = LEFT_BUT_PIN;
+
+    //Act/Assert
+    dummy = updateLoop(TEST_DURATION, NO_CHANGE);
+
+    // Act
+    uint8_t result = isUnpressed(LEFT);
+
+    // Assert
+    TEST_ASSERT_EQUAL(false, result);
+}
+
+void test_buttons4_initialises_right(void)
+{
+    //Arrange
+    GPIOPinRead_fake.arg0_val = RIGHT_BUT_PORT_BASE;
+    GPIOPinRead_fake.arg1_val = RIGHT_BUT_PIN;
+    GPIOPinRead_fake.return_val = RIGHT_BUT_PIN;
+
+    //Act/Assert
+    dummy = updateLoop(TEST_DURATION, NO_CHANGE);
+
+    // Act
+    uint8_t result = isUnpressed(RIGHT);
+
+    // Assert
+    TEST_ASSERT_EQUAL(false, result);
+}
+
 void test_buttons4_clear(void) {
     //Arrange
     GPIOPinRead_fake.arg0_val = UP_BUT_PORT_BASE;
@@ -141,11 +192,11 @@ void test_buttons4_clear(void) {
     GPIOPinRead_fake.return_val = 0;
 
     //Act/Assert
-    updateLoop(TEST_DURATION, NO_CHANGE);
+    dummy = updateLoop(TEST_DURATION, NO_CHANGE);
     TEST_ASSERT_EQUAL(true, isUnpressed(UP));
 
     GPIOPinRead_fake.return_val = UP_BUT_PIN;
-    updateLoop(TEST_DURATION, NO_CHANGE);
+    dummy = updateLoop(TEST_DURATION, NO_CHANGE);
     TEST_ASSERT_EQUAL(false, isUnpressed(UP));
 }
 
@@ -192,10 +243,8 @@ void test_buttons4_long_true(void) {
 
 
     //Act
-    result = updateLoop(TEST_DURATION+2, LONG);
+    result = updateLoop(TEST_DURATION*5, LONG);
 
-    GPIOPinRead_fake.return_val = 0;
-    result = updateLoop(TEST_DURATION/2, LONG);
     //Assert
     TEST_ASSERT_EQUAL(LONG, result);
 }
@@ -224,9 +273,9 @@ void test_buttons4_double_true_long(void) {
 
 
     //Act
-    updateLoop(TEST_DURATION/4, NO_CHANGE);
+    dummy = updateLoop(TEST_DURATION/4, NO_CHANGE);
     GPIOPinRead_fake.return_val = 0;
-    updateLoop(TEST_DURATION/4, NO_CHANGE);
+    dummy = updateLoop(TEST_DURATION/4, NO_CHANGE);
     GPIOPinRead_fake.return_val = UP_BUT_PIN;
     result = updateLoop(TEST_DURATION, DOUBLE);
     GPIOPinRead_fake.return_val = 0;
@@ -246,9 +295,9 @@ void test_buttons4_double_true_short(void) {
 
 
     //Act
-    updateLoop(TEST_DURATION/4, NO_CHANGE);
+    dummy = updateLoop(TEST_DURATION/4, NO_CHANGE);
     GPIOPinRead_fake.return_val = 0;
-    updateLoop(TEST_DURATION/4, NO_CHANGE);
+    dummy = updateLoop(TEST_DURATION/4, NO_CHANGE);
     GPIOPinRead_fake.return_val = UP_BUT_PIN;
     result = updateLoop(TEST_DURATION/4, DOUBLE);
     GPIOPinRead_fake.return_val = 0;
@@ -269,10 +318,10 @@ void test_buttons4_double_false_gap_too_long(void) {
 
 
     //Act
-    updateLoop(TEST_DURATION/4, NO_CHANGE);
+    dummy = (TEST_DURATION/4, NO_CHANGE);
 
     GPIOPinRead_fake.return_val = 0;
-    updateLoop(TEST_DURATION+5, NO_CHANGE);
+    result = updateLoop(TEST_DURATION+5, NO_CHANGE);
 
     GPIOPinRead_fake.return_val = UP_BUT_PIN;
     result = updateLoop(TEST_DURATION/2, DOUBLE);
