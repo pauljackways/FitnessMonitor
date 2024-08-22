@@ -14,14 +14,6 @@
 #include "step_counter_main.h"
 #include "switches.h"
 #include "buttons4.h"
-//#include "inc/hw_types.h"
-//#include "driverlib/gpio.h"
-//#include "driverlib/sysctl.h"
-//#include "driverlib/debug.h"
-//#include "inc/tm4c123gh6pm.h"
-//#include "display_manager.h"
-//#include "deviceState.h"
-//#include "button_manager.h"
 
 
 
@@ -41,6 +33,9 @@ static uint8_t but_press[NUM_BUTS] = {0};
 
 void btnInit(void)
 {
+    for (int i=0; i<NUM_BUTS; i++) {
+        resetButton(i);
+    }
     initButtons();
     initSwitch();
 }
@@ -124,7 +119,7 @@ void displaySteps(void) {
     bindUnits(UP, SHORT);
     bindNavUp(LEFT, SHORT);
     bindNavDown(RIGHT, SHORT);
-    bindReset(DOWN, DOUBLE);
+    bindReset(DOWN, LONG);
 
 }
 
@@ -132,7 +127,7 @@ void displayDistance(void) {
     bindUnits(UP, SHORT);
     bindNavUp(LEFT, SHORT);
     bindNavDown(RIGHT, SHORT);
-    bindReset(DOWN, DOUBLE);
+    bindReset(DOWN, LONG);
 }
 
 void displaySetGoal(void) {
@@ -144,13 +139,12 @@ void displaySetGoal(void) {
 }
 
 void debugMode(void) {
-   // TEST MODE OPERATION
-   bindNavUp(LEFT, SHORT);
-   bindNavDown(RIGHT, SHORT);
-   bindStepsUp(UP, LONG);
-   bindSetGoal(UP, DOUBLE);
-   bindReset(DOWN, LONG);
-   bindStepsDown(DOWN, SHORT);
+    // TEST MODE OPERATION
+    bindNavUp(LEFT, SHORT);
+    bindNavDown(RIGHT, SHORT);
+    bindStepsUp(UP, SHORT);
+    bindStepsDown(DOWN, SHORT);
+    bindSetGoal(DOWN, LONG);
 }
 
 

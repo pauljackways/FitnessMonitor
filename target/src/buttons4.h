@@ -49,6 +49,8 @@ typedef enum {
 #define RIGHT_BUT_PIN  GPIO_PIN_0
 #define RIGHT_BUT_NORMAL  true
 
+#define TEST_DURATION 20 // Define the test duration as 40 cycles
+
 #define NUM_BUT_POLLS 2
 // Debounce algorithm: A state machine is associated with each button.
 // A state change occurs only after NUM_BUT_POLLS consecutive polls have
@@ -69,15 +71,18 @@ initButtons (void);
 void
 updateButtons (void);
 
-
+// *******************************************************
+// checkPressType: Function designed to be called regularly. It polls one
+// and updates variables associated with the buttons if
+// necessary. Returns a button press type if it is detected, NO_CHANGE otherwise
 ButtonPressType checkPressType(uint8_t butName);
 
 // Function which returns current button state. Abstracts GPIO function calls for other modules
 bool isDown(uint8_t butName);
 
+// Returns the physical button state from the user's perspective
 bool isUnpressed(uint8_t butName);
 
-#define TEST_DURATION 20 // Define the test duration as 40 cycles
 
 
 
